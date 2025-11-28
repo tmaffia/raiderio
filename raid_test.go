@@ -12,12 +12,15 @@ func TestGetRaidBySlug(t *testing.T) {
 		expectedName   string
 		expectedErrMsg string
 	}{
-		{slug: "aberrus-the-shadowed-crucible", expectedName: "Aberrus, the Shadowed Crucible"},
+		{slug: "nerubar-palace", expectedName: "Nerub-ar Palace"},
 		{slug: "invalid raid slug", expectedErrMsg: "invalid raid"},
-		{slug: "aberrus-the-shadowed-crucibleinvalid raid slug", expectedErrMsg: "invalid raid"},
+		{slug: "nerubar-palaceinvalid raid slug", expectedErrMsg: "invalid raid"},
 	}
 
-	raids, _ := c.GetRaids(defaultCtx, expansions.DRAGONFLIGHT)
+	raids, err := c.GetRaids(defaultCtx, expansions.WAR_WITHIN)
+	if err != nil {
+		t.Fatalf("Error getting raids: %v", err)
+	}
 
 	for _, tc := range testCases {
 		raid, err := raids.GetRaidBySlug(tc.slug)

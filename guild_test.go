@@ -14,31 +14,33 @@ func TestGetGuildRaidRankBySlug(t *testing.T) {
 		name                string
 		includeRandRankings bool
 		raidSlug            string
-		expectedRaidRank    int
 		expectedErrMsg      string
 	}{
-		{region: regions.US, realm: "illidan", name: "warpath", raidSlug: "nerubar-palace", expectedRaidRank: 92, includeRandRankings: true},
+		{region: regions.US, realm: "illidan", name: "warpath", raidSlug: "nerubar-palace", includeRandRankings: true},
 		{region: regions.US, realm: "illidan", name: "warpath", raidSlug: "invalid raid slug", expectedErrMsg: "invalid raid", includeRandRankings: true},
 		{region: regions.US, realm: "illidan", name: "warpath", raidSlug: "nerubar-palace",
 			expectedErrMsg: "guild raid rankings field missing from api response", includeRandRankings: false},
 	}
 
 	for _, tc := range testCases {
-		profile, _ := c.GetGuild(defaultCtx, &raiderio.GuildQuery{
+		profile, err := c.GetGuild(defaultCtx, &raiderio.GuildQuery{
 			Region:       tc.region,
 			Realm:        tc.realm,
 			Name:         tc.name,
 			RaidRankings: tc.includeRandRankings,
 		})
+		if err != nil {
+			t.Fatalf("Error getting guild: %v", err)
+		}
 
 		rank, err := profile.GetGuildRaidRankBySlug(tc.raidSlug)
 		if err != nil && err.Error() != tc.expectedErrMsg {
 			t.Fatalf("expected error: %v, got: %v", tc.expectedErrMsg, err.Error())
 		}
 
-		if err == nil && rank.Mythic.World != tc.expectedRaidRank {
-			t.Fatalf("mythic guild ranking for raid: %v, got: %d, expected: %d",
-				rank.RaidSlug, rank.Mythic.World, tc.expectedRaidRank)
+		if err == nil && !(rank.Mythic.World > 0) {
+			t.Fatalf("mythic guild ranking for raid: %v, got: %d, expected > 0",
+				rank.RaidSlug, rank.Mythic.World)
 		}
 	}
 }

@@ -17,6 +17,7 @@ const baseUrl string = "https://raider.io/api"
 // Client is the main struct for interacting with the Raider.IO API
 type Client struct {
 	ApiUrl     string
+	AccessKey  string
 	HttpClient *http.Client
 }
 

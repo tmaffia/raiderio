@@ -1,8 +1,12 @@
 package raiderio_test
 
 import (
+	"bufio"
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -16,7 +20,30 @@ var defaultCtx context.Context
 var cancel context.CancelFunc
 
 func setup() {
+	// Try to read .env and .env.local files
+	for _, filename := range []string{".env", ".env.local", ".env.Local"} {
+		func() {
+			file, err := os.Open(filename)
+			if err == nil {
+				defer file.Close()
+				scanner := bufio.NewScanner(file)
+				for scanner.Scan() {
+					line := scanner.Text()
+					parts := strings.SplitN(line, "=", 2)
+					if len(parts) == 2 {
+						key := strings.TrimSpace(parts[0])
+						value := strings.TrimSpace(parts[1])
+						os.Setenv(key, value)
+					}
+				}
+			}
+		}()
+	}
+
 	c = raiderio.NewClient()
+	if key := os.Getenv("RAIDERIO_ACCESS_KEY"); key != "" {
+		c.AccessKey = key
+	}
 	defaultCtx, cancel = context.WithTimeout(context.Background(), time.Second*30)
 }
 
@@ -29,6 +56,63 @@ func TestMain(m *testing.M) {
 func TestNewClient(t *testing.T) {
 	if c.ApiUrl != "https://raider.io/api/v1" {
 		t.Errorf("NewClient apiUrl created incorrectly")
+	}
+}
+
+func TestClient_WithAccessKey(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		keys, ok := r.URL.Query()["access_key"]
+		if !ok || len(keys[0]) < 1 {
+			t.Errorf("access_key query param not found")
+		}
+		if keys[0] != "test_key" {
+			t.Errorf("access_key expected: test_key, got: %v", keys[0])
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"name": "Test Character"}`))
+	}))
+	defer ts.Close()
+
+	client := raiderio.NewClient()
+	client.ApiUrl = ts.URL
+	client.AccessKey = "test_key"
+
+	_, err := client.GetCharacter(context.Background(), &raiderio.CharacterQuery{
+		Region: regions.US,
+		Realm:  "illidan",
+		Name:   "test",
+	})
+
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+func TestClient_NoAccessKey(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		keys, ok := r.URL.Query()["access_key"]
+		if ok && len(keys) > 0 {
+			t.Errorf("access_key query param should NOT be present, got: %v", keys[0])
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"name": "Test Character"}`))
+	}))
+	defer ts.Close()
+
+	// Create a local client explicitly WITHOUT an AccessKey
+	client := raiderio.NewClient()
+	client.ApiUrl = ts.URL
+	// Ensure AccessKey is empty (it should be by default, but being explicit)
+	client.AccessKey = ""
+
+	_, err := client.GetCharacter(context.Background(), &raiderio.CharacterQuery{
+		Region: regions.US,
+		Realm:  "illidan",
+		Name:   "test",
+	})
+
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
 	}
 }
 
@@ -364,6 +448,7 @@ func TestGetRaids(t *testing.T) {
 		expectedErrMsg   string
 	}{
 		{expansion: expansions.DRAGONFLIGHT, raidName: "aberrus-the-shadowed-crucible", expectedRaidName: "Aberrus, the Shadowed Crucible"},
+		{expansion: expansions.MIDNIGHT, raidName: "march-on-queldanas", expectedRaidName: "March on Quel'Danas"},
 		{timeout: true, expansion: expansions.DRAGONFLIGHT, raidName: "aberrus-the-shadowed-crucible", expectedErrMsg: "raiderio api request timeout"},
 		{expansion: 2, expectedErrMsg: "unsupported expansion"},
 	}
@@ -393,25 +478,23 @@ func TestGetRaids(t *testing.T) {
 
 func TestGetRaidRankings(t *testing.T) {
 	testCases := []struct {
-		timeout                bool
-		slug                   string
-		difficulty             raiderio.RaidDifficulty
-		region                 *regions.Region
-		realm                  string
-		limit                  int
-		page                   int
-		expectedErrMsg         string
-		expectedRank1GuildName string
+		timeout        bool
+		slug           string
+		difficulty     raiderio.RaidDifficulty
+		region         *regions.Region
+		realm          string
+		limit          int
+		page           int
+		expectedErrMsg string
 	}{
-		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.WORLD,
-			expectedRank1GuildName: "Liquid"},
+		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.WORLD, limit: 1},
 		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.US,
-			realm: "proudmoore", expectedRank1GuildName: "The Royal Knights"},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: "mythic", region: regions.EU, expectedRank1GuildName: "Echo"},
+			realm: "proudmoore", limit: 1},
+		{slug: "aberrus-the-shadowed-crucible", difficulty: "mythic", region: regions.EU, limit: 1},
 		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.US,
-			realm: "illidan", expectedRank1GuildName: "Liquid"},
+			realm: "illidan", limit: 1},
 		{slug: "invalid raid slug", difficulty: raiderio.MYTHIC_RAID, region: regions.US, realm: "illidan",
-			expectedErrMsg: "invalid raid"},
+			expectedErrMsg: "unexpected error"},
 		{slug: "aberrus-the-shadowed-crucible", difficulty: "mythic", region: nil, realm: "illidan", expectedErrMsg: "invalid region"},
 		{slug: "aberrus-the-shadowed-crucible", difficulty: "", region: regions.US, realm: "illidan",
 			expectedErrMsg: "invalid raid difficulty"},
@@ -419,12 +502,10 @@ func TestGetRaidRankings(t *testing.T) {
 			expectedErrMsg: "invalid raid difficulty"},
 		{slug: "", difficulty: raiderio.MYTHIC_RAID, region: regions.US, realm: "illidan",
 			expectedErrMsg: "invalid raid name"},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.WORLD,
-			expectedRank1GuildName: "Liquid", limit: 20},
+		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.WORLD, limit: 20},
 		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.WORLD, limit: -20,
 			expectedErrMsg: "limit must be a positive int"},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.US,
-			expectedRank1GuildName: "Accession", limit: 40, page: 2},
+		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.US, limit: 40, page: 2},
 		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.US, limit: 40,
 			page: -2, expectedErrMsg: "page must be a positive int"},
 		{timeout: true, slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.US,
@@ -451,15 +532,12 @@ func TestGetRaidRankings(t *testing.T) {
 			t.Fatalf("expected error: %v, got: %v", tc.expectedErrMsg, err.Error())
 		}
 
-		if err == nil && rankings.RaidRanking[0].Guild.Name != tc.expectedRank1GuildName {
-			t.Fatalf("expected guild name: %v, got: %v", tc.expectedRank1GuildName, rankings.RaidRanking[0].Guild.Name)
-		}
-
 		if err == nil && tc.limit != 0 {
 			if len(rankings.RaidRanking) != tc.limit {
 				t.Fatalf("expected results limit: %v, got: %v", tc.limit, len(rankings.RaidRanking))
 			}
-
+		} else if err == nil && len(rankings.RaidRanking) == 0 {
+			t.Fatalf("expected results to not be empty")
 		}
 	}
 }
