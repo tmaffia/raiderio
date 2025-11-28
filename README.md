@@ -11,13 +11,23 @@ Wrapper for the raider.io API written in Go
 ### Include module in your go.mod
 
 ```
-include github.com/tmaffia/raiderio v0.4.0
+include github.com/tmaffia/raiderio v0.5.0
+```
+
+### Authentication
+
+The Raider.IO API provides higher rate limits for authenticated requests. You can generate an API key by registering your application on the [Raider.IO Application Settings](https://raider.io/settings/apps) page.
+
+To use your API key with the client:
+
+```go
+client := raiderio.NewClient(raiderio.WithAccessKey("YOUR_API_KEY"))
 ```
 
 ### Get a Character Profile
 
 ```go
-client, err := raiderio.NewClient()
+client := raiderio.NewClient()
 
 profile, err := client.GetCharacter(&CharacterQuery{
  Region: regions.US,

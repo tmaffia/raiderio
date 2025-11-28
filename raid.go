@@ -31,18 +31,9 @@ type RaidRankings struct {
 // Unfortunately the "Guild" object differs in structure from the
 // guild profile response. This requires a separate struct
 type RaidRanking struct {
-	Rank         int `json:"rank"`
-	RegionalRank int `json:"region_rank"`
-	Guild        struct {
-		Id      int            `json:"id"`
-		Name    string         `json:"name"`
-		Faction string         `json:"faction"`
-		Realm   realms.Realm   `json:"realm"`
-		Region  regions.Region `json:"region"`
-		Path    string         `json:"path"`
-		Logo    string         `json:"logo"`
-		Color   string         `json:"color"`
-	} `json:"guild"`
+	Rank               int       `json:"rank"`
+	RegionalRank       int       `json:"region_rank"`
+	Guild              RaidGuild `json:"guild"`
 	EncountersDefeated []struct {
 		Slug           string `json:"slug"`
 		LastDefeatedAt string `json:"lastDefeated"`
@@ -56,6 +47,19 @@ type RaidRanking struct {
 		BestPercent    float32 `json:"bestPercent"`
 		IsDefeated     bool    `json:"isDefeated"`
 	} `json:"encountersPulled"`
+}
+
+// RaidGuild represents a guild in raid-related responses
+// This structure is used in RaidRankings, BossRankings, HallOfFame, etc.
+type RaidGuild struct {
+	Id      int            `json:"id"`
+	Name    string         `json:"name"`
+	Faction string         `json:"faction"`
+	Realm   realms.Realm   `json:"realm"`
+	Region  regions.Region `json:"region"`
+	Path    string         `json:"path"`
+	Logo    string         `json:"logo"`
+	Color   string         `json:"color"`
 }
 
 // RaidProgression is a struct that contains the raid progression of a guild
@@ -338,4 +342,128 @@ func (r *Raids) GetRaidBySlug(slug string) (*Raid, error) {
 		}
 	}
 	return nil, ErrInvalidRaid
+}
+
+// BossRankingsQuery represents the query parameters for boss rankings
+type BossRankingsQuery struct {
+	RaidSlug   string
+	BossSlug   string
+	Difficulty RaidDifficulty
+	Region     *regions.Region
+	Realm      string
+}
+
+// BossRankings represents the response from a boss rankings request
+type BossRankings struct {
+	BossRankings []BossRanking `json:"bossRankings"`
+}
+
+// BossRanking represents a single ranking entry for a boss
+type BossRanking struct {
+	Rank               int       `json:"rank"`
+	RegionRank         int       `json:"regionRank"`
+	Guild              RaidGuild `json:"guild"`
+	EncountersDefeated []struct {
+		Slug          string `json:"slug"`
+		LastDefeated  string `json:"lastDefeated"`
+		FirstDefeated string `json:"firstDefeated"`
+	} `json:"encountersDefeated"`
+}
+
+// HallOfFameQuery represents the query parameters for hall of fame
+type HallOfFameQuery struct {
+	RaidSlug   string
+	Difficulty RaidDifficulty
+	Region     *regions.Region
+}
+
+// HallOfFame represents the response from a hall of fame request
+type HallOfFame struct {
+	HallOfFame HallOfFameEntry `json:"hallOfFame"`
+}
+
+// HallOfFameEntry represents a single entry in the hall of fame
+type HallOfFameEntry struct {
+	BossKills []struct {
+		Boss        string `json:"boss"`
+		BossSummary struct {
+			EncounterId int    `json:"encounterId"`
+			Name        string `json:"name"`
+			Slug        string `json:"slug"`
+			Ordinal     int    `json:"ordinal"`
+			WingId      int    `json:"wingId"`
+			IconUrl     string `json:"iconUrl"`
+		} `json:"bossSummary"`
+		DefeatedBy struct {
+			TotalCount int `json:"totalCount"`
+			Guilds     []struct {
+				Guild      RaidGuild `json:"guild"`
+				DefeatedAt string    `json:"defeatedAt"`
+			} `json:"guilds"`
+		} `json:"defeatedBy"`
+	} `json:"bossKills"`
+}
+
+// RaidProgressionQuery represents the query parameters for raid progression
+type RaidProgressionQuery struct {
+	RaidSlug   string
+	Difficulty RaidDifficulty
+	Region     *regions.Region
+}
+
+// RaidProgressionResponse represents the response from a raid progression request
+type RaidProgressionResponse struct {
+	Progression []RaidProgressionEntry `json:"progression"`
+}
+
+// RaidProgressionEntry represents a single progression entry
+type RaidProgressionEntry struct {
+	Progress    int `json:"progress"`
+	TotalGuilds int `json:"totalGuilds"`
+	Guilds      []struct {
+		DefeatedAt string    `json:"defeatedAt"`
+		Guild      RaidGuild `json:"guild"`
+	} `json:"guilds"`
+}
+
+func validateBossRankingsQuery(q *BossRankingsQuery) error {
+	if q.RaidSlug == "" {
+		return ErrInvalidRaidName
+	}
+	if q.BossSlug == "" {
+		return ErrInvalidBoss
+	}
+	if q.Difficulty == "" || !raidDifficltyValid(q.Difficulty) {
+		return ErrInvalidRaidDiff
+	}
+	if q.Region == nil {
+		return ErrInvalidRegion
+	}
+	return nil
+}
+
+func validateHallOfFameQuery(q *HallOfFameQuery) error {
+	if q.RaidSlug == "" {
+		return ErrInvalidRaidName
+	}
+	if q.Difficulty == "" || !raidDifficltyValid(q.Difficulty) {
+		return ErrInvalidRaidDiff
+	}
+	if q.Region == nil {
+		return ErrInvalidRegion
+	}
+	return nil
+}
+
+func validateRaidProgressionQuery(q *RaidProgressionQuery) error {
+	if q.RaidSlug == "" {
+		return ErrInvalidRaidName
+	}
+	if q.Difficulty == "" || !raidDifficltyValid(q.Difficulty) {
+		return ErrInvalidRaidDiff
+	}
+	if q.Region == nil {
+		return ErrInvalidRegion
+	}
+	return nil
 }
