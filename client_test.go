@@ -40,10 +40,11 @@ func setup() {
 		}()
 	}
 
-	c = raiderio.NewClient()
+	var opts []raiderio.ClientOption
 	if key := os.Getenv("RAIDERIO_ACCESS_KEY"); key != "" {
-		c.AccessKey = key
+		opts = append(opts, raiderio.WithAccessKey(key))
 	}
+	c = raiderio.NewClient(opts...)
 	defaultCtx, cancel = context.WithTimeout(context.Background(), time.Second*30)
 }
 
@@ -73,9 +74,8 @@ func TestClient_WithAccessKey(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := raiderio.NewClient()
+	client := raiderio.NewClient(raiderio.WithAccessKey("test_key"))
 	client.ApiUrl = ts.URL
-	client.AccessKey = "test_key"
 
 	_, err := client.GetCharacter(context.Background(), &raiderio.CharacterQuery{
 		Region: regions.US,

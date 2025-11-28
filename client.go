@@ -22,11 +22,26 @@ type Client struct {
 	HttpClient *http.Client
 }
 
+// ClientOption is a function that configures a Client
+type ClientOption func(*Client)
+
+// WithAccessKey returns a ClientOption that sets the AccessKey
+func WithAccessKey(key string) ClientOption {
+	return func(c *Client) {
+		c.AccessKey = key
+	}
+}
+
 // NewClient creates a new Client struct
-func NewClient() *Client {
+func NewClient(opts ...ClientOption) *Client {
 	var c Client
 	c.ApiUrl = baseUrl + "/v1"
 	c.HttpClient = &http.Client{}
+
+	for _, opt := range opts {
+		opt(&c)
+	}
+
 	return &c
 }
 
