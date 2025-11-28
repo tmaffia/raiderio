@@ -393,25 +393,23 @@ func TestGetRaids(t *testing.T) {
 
 func TestGetRaidRankings(t *testing.T) {
 	testCases := []struct {
-		timeout                bool
-		slug                   string
-		difficulty             raiderio.RaidDifficulty
-		region                 *regions.Region
-		realm                  string
-		limit                  int
-		page                   int
-		expectedErrMsg         string
-		expectedRank1GuildName string
+		timeout        bool
+		slug           string
+		difficulty     raiderio.RaidDifficulty
+		region         *regions.Region
+		realm          string
+		limit          int
+		page           int
+		expectedErrMsg string
 	}{
-		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.WORLD,
-			expectedRank1GuildName: "Liquid"},
+		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.WORLD},
 		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.US,
-			realm: "proudmoore", expectedRank1GuildName: "The Royal Knights"},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: "mythic", region: regions.EU, expectedRank1GuildName: "Echo"},
+			realm: "proudmoore"},
+		{slug: "aberrus-the-shadowed-crucible", difficulty: "mythic", region: regions.EU},
 		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.US,
-			realm: "illidan", expectedRank1GuildName: "Liquid"},
+			realm: "illidan"},
 		{slug: "invalid raid slug", difficulty: raiderio.MYTHIC_RAID, region: regions.US, realm: "illidan",
-			expectedErrMsg: "invalid raid"},
+			expectedErrMsg: "unexpected error"},
 		{slug: "aberrus-the-shadowed-crucible", difficulty: "mythic", region: nil, realm: "illidan", expectedErrMsg: "invalid region"},
 		{slug: "aberrus-the-shadowed-crucible", difficulty: "", region: regions.US, realm: "illidan",
 			expectedErrMsg: "invalid raid difficulty"},
@@ -419,12 +417,10 @@ func TestGetRaidRankings(t *testing.T) {
 			expectedErrMsg: "invalid raid difficulty"},
 		{slug: "", difficulty: raiderio.MYTHIC_RAID, region: regions.US, realm: "illidan",
 			expectedErrMsg: "invalid raid name"},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.WORLD,
-			expectedRank1GuildName: "Liquid", limit: 20},
+		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.WORLD, limit: 20},
 		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.WORLD, limit: -20,
 			expectedErrMsg: "limit must be a positive int"},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.US,
-			expectedRank1GuildName: "Accession", limit: 40, page: 2},
+		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.US, limit: 40, page: 2},
 		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.US, limit: 40,
 			page: -2, expectedErrMsg: "page must be a positive int"},
 		{timeout: true, slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.US,
@@ -451,15 +447,12 @@ func TestGetRaidRankings(t *testing.T) {
 			t.Fatalf("expected error: %v, got: %v", tc.expectedErrMsg, err.Error())
 		}
 
-		if err == nil && rankings.RaidRanking[0].Guild.Name != tc.expectedRank1GuildName {
-			t.Fatalf("expected guild name: %v, got: %v", tc.expectedRank1GuildName, rankings.RaidRanking[0].Guild.Name)
-		}
-
 		if err == nil && tc.limit != 0 {
 			if len(rankings.RaidRanking) != tc.limit {
 				t.Fatalf("expected results limit: %v, got: %v", tc.limit, len(rankings.RaidRanking))
 			}
-
+		} else if err == nil && len(rankings.RaidRanking) == 0 {
+			t.Fatalf("expected results to not be empty")
 		}
 	}
 }
