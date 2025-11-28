@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/tmaffia/raiderio/expansions"
@@ -38,10 +39,15 @@ func (c *Client) GetCharacter(ctx context.Context, cq *CharacterQuery) (*Charact
 		return nil, err
 	}
 
-	reqUrl := c.ApiUrl + "/characters/profile?region=" + cq.Region.Slug + "&realm=" + cq.Realm + "&name=" + cq.Name
-	if len(cq.fields) != 0 {
-		reqUrl += "&fields=" + strings.Join(cq.fields, ",")
+	params := url.Values{}
+	params.Add("region", cq.Region.Slug)
+	params.Add("realm", cq.Realm)
+	params.Add("name", cq.Name)
+	if len(cq.fields) > 0 {
+		params.Add("fields", strings.Join(cq.fields, ","))
 	}
+
+	reqUrl := fmt.Sprintf("%s/characters/profile?%s", c.ApiUrl, params.Encode())
 
 	body, err := c.getAPIResponse(ctx, reqUrl)
 	if err != nil {
@@ -66,10 +72,15 @@ func (c *Client) GetGuild(ctx context.Context, gq *GuildQuery) (*Guild, error) {
 		return nil, err
 	}
 
-	reqUrl := c.ApiUrl + "/guilds/profile?region=" + gq.Region.Slug + "&realm=" + gq.Realm + "&name=" + gq.Name
-	if len(gq.fields) != 0 {
-		reqUrl += "&fields=" + strings.Join(gq.fields, ",")
+	params := url.Values{}
+	params.Add("region", gq.Region.Slug)
+	params.Add("realm", gq.Realm)
+	params.Add("name", gq.Name)
+	if len(gq.fields) > 0 {
+		params.Add("fields", strings.Join(gq.fields, ","))
 	}
+
+	reqUrl := fmt.Sprintf("%s/guilds/profile?%s", c.ApiUrl, params.Encode())
 
 	body, err := c.getAPIResponse(ctx, reqUrl)
 	if err != nil {
@@ -89,7 +100,9 @@ func (c *Client) GetGuild(ctx context.Context, gq *GuildQuery) (*Guild, error) {
 // response body cannot be read or mapped to the Raids struct
 // Takes an Expansion enum as a parameter, in addition to context.Context
 func (c *Client) GetRaids(ctx context.Context, e expansions.Expansion) (*Raids, error) {
-	reqUrl := c.ApiUrl + "/raiding/static-data?expansion_id=" + fmt.Sprintf("%d", e)
+	params := url.Values{}
+	params.Add("expansion_id", fmt.Sprintf("%d", e))
+	reqUrl := fmt.Sprintf("%s/raiding/static-data?%s", c.ApiUrl, params.Encode())
 	body, err := c.getAPIResponse(ctx, reqUrl)
 	if err != nil {
 		return nil, err
@@ -114,20 +127,24 @@ func (c *Client) GetRaidRankings(ctx context.Context, rq *RaidQuery) (*RaidRanki
 		return nil, err
 	}
 
-	reqUrl := c.ApiUrl + "/raiding/raid-rankings?raid=" + rq.Slug +
-		"&difficulty=" + string(rq.Difficulty) + "&region=" + rq.Region.Slug
+	params := url.Values{}
+	params.Add("raid", rq.Slug)
+	params.Add("difficulty", string(rq.Difficulty))
+	params.Add("region", rq.Region.Slug)
 
 	if rq.Realm != "" {
-		reqUrl += "&realm=" + rq.Realm
+		params.Add("realm", rq.Realm)
 	}
 
 	if rq.Limit != 0 {
-		reqUrl += "&limit=" + fmt.Sprintf("%d", rq.Limit)
+		params.Add("limit", fmt.Sprintf("%d", rq.Limit))
 	}
 
 	if rq.Page != 0 {
-		reqUrl += "&page=" + fmt.Sprintf("%d", rq.Page)
+		params.Add("page", fmt.Sprintf("%d", rq.Page))
 	}
+
+	reqUrl := fmt.Sprintf("%s/raiding/raid-rankings?%s", c.ApiUrl, params.Encode())
 
 	body, err := c.getAPIResponse(ctx, reqUrl)
 	if err != nil {
@@ -152,9 +169,15 @@ func (c *Client) GetGuildBossKill(ctx context.Context, q *GuildBossKillQuery) (*
 	if err != nil {
 		return nil, err
 	}
-	reqUrl := c.ApiUrl + "/guilds/boss-kill?raid=" + q.RaidSlug +
-		"&difficulty=" + string(q.Difficulty) + "&region=" + q.Region.Slug +
-		"&realm=" + q.Realm + "&guild=" + q.GuildName + "&boss=" + q.BossSlug
+	params := url.Values{}
+	params.Add("raid", q.RaidSlug)
+	params.Add("difficulty", string(q.Difficulty))
+	params.Add("region", q.Region.Slug)
+	params.Add("realm", q.Realm)
+	params.Add("guild", q.GuildName)
+	params.Add("boss", q.BossSlug)
+
+	reqUrl := fmt.Sprintf("%s/guilds/boss-kill?%s", c.ApiUrl, params.Encode())
 
 	body, err := c.getAPIResponse(ctx, reqUrl)
 	if err != nil {

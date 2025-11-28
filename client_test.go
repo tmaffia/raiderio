@@ -494,7 +494,7 @@ func TestGetRaidRankings(t *testing.T) {
 		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.US,
 			realm: "illidan", limit: 1},
 		{slug: "invalid raid slug", difficulty: raiderio.MYTHIC_RAID, region: regions.US, realm: "illidan",
-			expectedErrMsg: "unexpected error"},
+			expectedErrMsg: "invalid raid"},
 		{slug: "aberrus-the-shadowed-crucible", difficulty: "mythic", region: nil, realm: "illidan", expectedErrMsg: "invalid region"},
 		{slug: "aberrus-the-shadowed-crucible", difficulty: "", region: regions.US, realm: "illidan",
 			expectedErrMsg: "invalid raid difficulty"},

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"strings"
+	"net/url"
 )
 
 type apiErrorResponse struct {
@@ -23,11 +23,14 @@ type apiErrorResponse struct {
 // with that error state.
 func (c *Client) getAPIResponse(ctx context.Context, reqUrl string) ([]byte, error) {
 	if c.AccessKey != "" {
-		if strings.Contains(reqUrl, "?") {
-			reqUrl += "&access_key=" + c.AccessKey
-		} else {
-			reqUrl += "?access_key=" + c.AccessKey
+		u, err := url.Parse(reqUrl)
+		if err != nil {
+			return nil, errors.New("error parsing request URL")
 		}
+		q := u.Query()
+		q.Set("access_key", c.AccessKey)
+		u.RawQuery = q.Encode()
+		reqUrl = u.String()
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqUrl, nil)
