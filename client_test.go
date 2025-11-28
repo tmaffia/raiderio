@@ -448,6 +448,7 @@ func TestGetRaids(t *testing.T) {
 		expectedErrMsg   string
 	}{
 		{expansion: expansions.DRAGONFLIGHT, raidName: "aberrus-the-shadowed-crucible", expectedRaidName: "Aberrus, the Shadowed Crucible"},
+		{expansion: expansions.MIDNIGHT, raidName: "march-on-queldanas", expectedRaidName: "March on Quel'Danas"},
 		{timeout: true, expansion: expansions.DRAGONFLIGHT, raidName: "aberrus-the-shadowed-crucible", expectedErrMsg: "raiderio api request timeout"},
 		{expansion: 2, expectedErrMsg: "unsupported expansion"},
 	}
