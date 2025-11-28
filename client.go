@@ -191,3 +191,91 @@ func (c *Client) GetGuildBossKill(ctx context.Context, q *GuildBossKillQuery) (*
 
 	return k, nil
 }
+
+// GetBossRankings retrieves the boss rankings for a given raid and boss
+func (c *Client) GetBossRankings(ctx context.Context, q *BossRankingsQuery) (*BossRankings, error) {
+	err := validateBossRankingsQuery(q)
+	if err != nil {
+		return nil, err
+	}
+
+	params := url.Values{}
+	params.Add("raid", q.RaidSlug)
+	params.Add("boss", q.BossSlug)
+	params.Add("difficulty", string(q.Difficulty))
+	params.Add("region", q.Region.Slug)
+	if q.Realm != "" {
+		params.Add("realm", q.Realm)
+	}
+
+	reqUrl := fmt.Sprintf("%s/raiding/boss-rankings?%s", c.ApiUrl, params.Encode())
+
+	body, err := c.getAPIResponse(ctx, reqUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	var rankings BossRankings
+	err = json.Unmarshal(body, &rankings)
+	if err != nil {
+		return nil, errors.New("error unmarshalling boss rankings")
+	}
+
+	return &rankings, nil
+}
+
+// GetHallOfFame retrieves the hall of fame for a given raid
+func (c *Client) GetHallOfFame(ctx context.Context, q *HallOfFameQuery) (*HallOfFame, error) {
+	err := validateHallOfFameQuery(q)
+	if err != nil {
+		return nil, err
+	}
+
+	params := url.Values{}
+	params.Add("raid", q.RaidSlug)
+	params.Add("difficulty", string(q.Difficulty))
+	params.Add("region", q.Region.Slug)
+
+	reqUrl := fmt.Sprintf("%s/raiding/hall-of-fame?%s", c.ApiUrl, params.Encode())
+
+	body, err := c.getAPIResponse(ctx, reqUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	var hof HallOfFame
+	err = json.Unmarshal(body, &hof)
+	if err != nil {
+		return nil, errors.New("error unmarshalling hall of fame")
+	}
+
+	return &hof, nil
+}
+
+// GetRaidProgression retrieves the raid progression for a given raid
+func (c *Client) GetRaidProgression(ctx context.Context, q *RaidProgressionQuery) (*RaidProgressionResponse, error) {
+	err := validateRaidProgressionQuery(q)
+	if err != nil {
+		return nil, err
+	}
+
+	params := url.Values{}
+	params.Add("raid", q.RaidSlug)
+	params.Add("difficulty", string(q.Difficulty))
+	params.Add("region", q.Region.Slug)
+
+	reqUrl := fmt.Sprintf("%s/raiding/progression?%s", c.ApiUrl, params.Encode())
+
+	body, err := c.getAPIResponse(ctx, reqUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	var prog RaidProgressionResponse
+	err = json.Unmarshal(body, &prog)
+	if err != nil {
+		return nil, errors.New("error unmarshalling raid progression")
+	}
+
+	return &prog, nil
+}

@@ -551,3 +551,140 @@ func killIncludesCharacter(k *raiderio.BossKill, c string) bool {
 	}
 	return false
 }
+
+func TestGetBossRankings(t *testing.T) {
+	testCases := []struct {
+		timeout        bool
+		raidSlug       string
+		bossSlug       string
+		difficulty     raiderio.RaidDifficulty
+		region         *regions.Region
+		realm          string
+		expectedErrMsg string
+	}{
+		{raidSlug: "nerubar-palace", bossSlug: "queen-ansurek", difficulty: raiderio.MYTHIC_RAID, region: regions.US},
+		{raidSlug: "nerubar-palace", bossSlug: "queen-ansurek", difficulty: raiderio.MYTHIC_RAID, region: regions.US, realm: "illidan"},
+		{raidSlug: "", bossSlug: "queen-ansurek", difficulty: raiderio.MYTHIC_RAID, region: regions.US, expectedErrMsg: "invalid raid name"},
+		{raidSlug: "nerubar-palace", bossSlug: "", difficulty: raiderio.MYTHIC_RAID, region: regions.US, expectedErrMsg: "invalid boss"},
+		{raidSlug: "nerubar-palace", bossSlug: "queen-ansurek", difficulty: "", region: regions.US, expectedErrMsg: "invalid raid difficulty"},
+		{raidSlug: "nerubar-palace", bossSlug: "queen-ansurek", difficulty: raiderio.MYTHIC_RAID, region: nil, expectedErrMsg: "invalid region"},
+		{timeout: true, raidSlug: "nerubar-palace", bossSlug: "queen-ansurek", difficulty: raiderio.MYTHIC_RAID, region: regions.US, expectedErrMsg: "raiderio api request timeout"},
+	}
+
+	for _, tc := range testCases {
+		ctx := defaultCtx
+		var cancel context.CancelFunc
+		if tc.timeout {
+			ctx, cancel = context.WithTimeout(ctx, time.Millisecond*1)
+			defer cancel()
+		}
+
+		rankings, err := c.GetBossRankings(ctx, &raiderio.BossRankingsQuery{
+			RaidSlug:   tc.raidSlug,
+			BossSlug:   tc.bossSlug,
+			Difficulty: tc.difficulty,
+			Region:     tc.region,
+			Realm:      tc.realm,
+		})
+
+		if err != nil && err.Error() != tc.expectedErrMsg {
+			t.Fatalf("expected error: %v, got: %v", tc.expectedErrMsg, err.Error())
+		}
+
+		if err == nil {
+			if len(rankings.BossRankings) == 0 {
+				t.Fatalf("expected boss rankings to not be empty")
+			}
+		}
+	}
+}
+
+func TestGetHallOfFame(t *testing.T) {
+	// Create a client without access key
+	noAuthClient := raiderio.NewClient()
+	noAuthClient.AccessKey = ""
+
+	testCases := []struct {
+		timeout        bool
+		raidSlug       string
+		difficulty     raiderio.RaidDifficulty
+		region         *regions.Region
+		expectedErrMsg string
+	}{
+		{raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: regions.US},
+		{raidSlug: "", difficulty: raiderio.MYTHIC_RAID, region: regions.US, expectedErrMsg: "invalid raid name"},
+		{raidSlug: "nerubar-palace", difficulty: "", region: regions.US, expectedErrMsg: "invalid raid difficulty"},
+		{raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: nil, expectedErrMsg: "invalid region"},
+		{timeout: true, raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: regions.US, expectedErrMsg: "raiderio api request timeout"},
+	}
+
+	for _, tc := range testCases {
+		ctx := defaultCtx
+		var cancel context.CancelFunc
+		if tc.timeout {
+			ctx, cancel = context.WithTimeout(ctx, time.Millisecond*1)
+			defer cancel()
+		}
+
+		hof, err := noAuthClient.GetHallOfFame(ctx, &raiderio.HallOfFameQuery{
+			RaidSlug:   tc.raidSlug,
+			Difficulty: tc.difficulty,
+			Region:     tc.region,
+		})
+
+		if err != nil && err.Error() != tc.expectedErrMsg {
+			t.Fatalf("expected error: %v, got: %v", tc.expectedErrMsg, err.Error())
+		}
+
+		if err == nil {
+			if len(hof.HallOfFame.BossKills) == 0 {
+				t.Fatalf("expected hall of fame to not be empty")
+			}
+		}
+	}
+}
+
+func TestGetRaidProgression(t *testing.T) {
+	// Create a client without access key to test if that's the issue
+	noAuthClient := raiderio.NewClient()
+	noAuthClient.AccessKey = ""
+
+	testCases := []struct {
+		timeout        bool
+		raidSlug       string
+		difficulty     raiderio.RaidDifficulty
+		region         *regions.Region
+		expectedErrMsg string
+	}{
+		{raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: regions.US},
+		{raidSlug: "", difficulty: raiderio.MYTHIC_RAID, region: regions.US, expectedErrMsg: "invalid raid name"},
+		{raidSlug: "nerubar-palace", difficulty: "", region: regions.US, expectedErrMsg: "invalid raid difficulty"},
+		{raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: nil, expectedErrMsg: "invalid region"},
+		{timeout: true, raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: regions.US, expectedErrMsg: "raiderio api request timeout"},
+	}
+
+	for _, tc := range testCases {
+		ctx := defaultCtx
+		var cancel context.CancelFunc
+		if tc.timeout {
+			ctx, cancel = context.WithTimeout(ctx, time.Millisecond*1)
+			defer cancel()
+		}
+
+		prog, err := noAuthClient.GetRaidProgression(ctx, &raiderio.RaidProgressionQuery{
+			RaidSlug:   tc.raidSlug,
+			Difficulty: tc.difficulty,
+			Region:     tc.region,
+		})
+
+		if err != nil && err.Error() != tc.expectedErrMsg {
+			t.Fatalf("expected error: %v, got: %v", tc.expectedErrMsg, err.Error())
+		}
+
+		if err == nil {
+			if len(prog.Progression) == 0 {
+				t.Fatalf("expected raid progression to not be empty")
+			}
+		}
+	}
+}
