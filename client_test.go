@@ -69,7 +69,7 @@ func TestClient_WithAccessKey(t *testing.T) {
 			t.Errorf("access_key expected: test_key, got: %v", keys[0])
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"name": "Test Character"}`))
+		_, _ = w.Write([]byte(`{"name": "Test Character"}`))
 	}))
 	defer ts.Close()
 
@@ -95,7 +95,7 @@ func TestClient_NoAccessKey(t *testing.T) {
 			t.Errorf("access_key query param should NOT be present, got: %v", keys[0])
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"name": "Test Character"}`))
+		_, _ = w.Write([]byte(`{"name": "Test Character"}`))
 	}))
 	defer ts.Close()
 
