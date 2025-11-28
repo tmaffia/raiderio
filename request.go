@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 )
 
 type apiErrorResponse struct {
@@ -21,6 +22,14 @@ type apiErrorResponse struct {
 // so in cases where the realm or the character name cannot be found, developer is presented
 // with that error state.
 func (c *Client) getAPIResponse(ctx context.Context, reqUrl string) ([]byte, error) {
+	if c.AccessKey != "" {
+		if strings.Contains(reqUrl, "?") {
+			reqUrl += "&access_key=" + c.AccessKey
+		} else {
+			reqUrl += "?access_key=" + c.AccessKey
+		}
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqUrl, nil)
 	if err != nil {
 		return nil, errors.New("error creating HTTP request")

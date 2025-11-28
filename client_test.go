@@ -1,8 +1,12 @@
 package raiderio_test
 
 import (
+	"bufio"
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -16,7 +20,30 @@ var defaultCtx context.Context
 var cancel context.CancelFunc
 
 func setup() {
+	// Try to read .env and .env.local files
+	for _, filename := range []string{".env", ".env.local", ".env.Local"} {
+		func() {
+			file, err := os.Open(filename)
+			if err == nil {
+				defer file.Close()
+				scanner := bufio.NewScanner(file)
+				for scanner.Scan() {
+					line := scanner.Text()
+					parts := strings.SplitN(line, "=", 2)
+					if len(parts) == 2 {
+						key := strings.TrimSpace(parts[0])
+						value := strings.TrimSpace(parts[1])
+						os.Setenv(key, value)
+					}
+				}
+			}
+		}()
+	}
+
 	c = raiderio.NewClient()
+	if key := os.Getenv("RAIDERIO_ACCESS_KEY"); key != "" {
+		c.AccessKey = key
+	}
 	defaultCtx, cancel = context.WithTimeout(context.Background(), time.Second*30)
 }
 
@@ -29,6 +56,63 @@ func TestMain(m *testing.M) {
 func TestNewClient(t *testing.T) {
 	if c.ApiUrl != "https://raider.io/api/v1" {
 		t.Errorf("NewClient apiUrl created incorrectly")
+	}
+}
+
+func TestClient_WithAccessKey(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		keys, ok := r.URL.Query()["access_key"]
+		if !ok || len(keys[0]) < 1 {
+			t.Errorf("access_key query param not found")
+		}
+		if keys[0] != "test_key" {
+			t.Errorf("access_key expected: test_key, got: %v", keys[0])
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"name": "Test Character"}`))
+	}))
+	defer ts.Close()
+
+	client := raiderio.NewClient()
+	client.ApiUrl = ts.URL
+	client.AccessKey = "test_key"
+
+	_, err := client.GetCharacter(context.Background(), &raiderio.CharacterQuery{
+		Region: regions.US,
+		Realm:  "illidan",
+		Name:   "test",
+	})
+
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+func TestClient_NoAccessKey(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		keys, ok := r.URL.Query()["access_key"]
+		if ok && len(keys) > 0 {
+			t.Errorf("access_key query param should NOT be present, got: %v", keys[0])
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"name": "Test Character"}`))
+	}))
+	defer ts.Close()
+
+	// Create a local client explicitly WITHOUT an AccessKey
+	client := raiderio.NewClient()
+	client.ApiUrl = ts.URL
+	// Ensure AccessKey is empty (it should be by default, but being explicit)
+	client.AccessKey = ""
+
+	_, err := client.GetCharacter(context.Background(), &raiderio.CharacterQuery{
+		Region: regions.US,
+		Realm:  "illidan",
+		Name:   "test",
+	})
+
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
 	}
 }
 
@@ -402,12 +486,12 @@ func TestGetRaidRankings(t *testing.T) {
 		page           int
 		expectedErrMsg string
 	}{
-		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.WORLD},
+		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.WORLD, limit: 1},
 		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.US,
-			realm: "proudmoore"},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: "mythic", region: regions.EU},
+			realm: "proudmoore", limit: 1},
+		{slug: "aberrus-the-shadowed-crucible", difficulty: "mythic", region: regions.EU, limit: 1},
 		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.US,
-			realm: "illidan"},
+			realm: "illidan", limit: 1},
 		{slug: "invalid raid slug", difficulty: raiderio.MYTHIC_RAID, region: regions.US, realm: "illidan",
 			expectedErrMsg: "unexpected error"},
 		{slug: "aberrus-the-shadowed-crucible", difficulty: "mythic", region: nil, realm: "illidan", expectedErrMsg: "invalid region"},
