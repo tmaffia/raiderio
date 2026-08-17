@@ -21,7 +21,7 @@ The Raider.IO API provides higher rate limits for authenticated requests. You ca
 To use your API key with the client:
 
 ```go
-client := raiderio.NewClient(raiderio.WithAccessKey("YOUR_API_KEY"))
+client := raiderio.NewClient("YOUR_API_KEY")
 ```
 
 ### Get a Character Profile
@@ -30,7 +30,7 @@ client := raiderio.NewClient(raiderio.WithAccessKey("YOUR_API_KEY"))
 client := raiderio.NewClient()
 
 profile, err := client.GetCharacter(&CharacterQuery{
- Region: regions.US,
+ Region: raiderio.US,
  Realm:  "illidan",
  Name:   "thehighvalue",
  TalentLoadout: true,
@@ -43,7 +43,7 @@ fmt.Println(profile.Class) // Mage
 
 ```go
 gq := raiderio.GuildQuery{
- Region: regions.US,
+ Region: raiderio.US,
  Realm:  "illidan",
  Name:   "warpath",
  Members: true,
@@ -58,7 +58,7 @@ profile, err := client.GetGuild(&gq)
 rq := raiderio.RaidQuery{
  Name:   "nerubar-palace",
  Difficulty: raiderio.MYTHIC_RAID,
- Region:  regions.US,
+ Region:  raiderio.US,
  Limit:   10,
 }
 
@@ -68,5 +68,5 @@ rankings, err := client.GetRaidRankings(&rq)
 ### Get Static Raid data by expansion
 
 ```go
-raids, err := client.GetRaids(expansions.WAR_WITHIN)
+raids, err := client.GetRaids(raiderio.WAR_WITHIN)
 ```

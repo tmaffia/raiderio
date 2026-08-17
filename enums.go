@@ -1,10 +1,18 @@
-package expansions
+package raiderio
 
-// Expansion Type is an enum that represents an expansion
+type Region string
+
+const (
+	WORLD Region = "world"
+	US    Region = "us"
+	EU    Region = "eu"
+	KR    Region = "kr"
+	TW    Region = "tw"
+	CN    Region = "cn"
+)
+
 type Expansion int
 
-// Constants for expansions available in Raider.IO API
-// Expansions are referenced as ints in the API
 const (
 	MIDNIGHT           Expansion = 11
 	WAR_WITHIN         Expansion = 10

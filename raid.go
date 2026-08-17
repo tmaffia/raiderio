@@ -3,9 +3,6 @@ package raiderio
 import (
 	"encoding/json"
 	"time"
-
-	"github.com/tmaffia/raiderio/realms"
-	"github.com/tmaffia/raiderio/regions"
 )
 
 // RaidQuery is a struct that represents the query parameters
@@ -14,7 +11,7 @@ import (
 type RaidQuery struct {
 	Slug       string
 	Difficulty RaidDifficulty
-	Region     *regions.Region
+	Region     Region
 	Realm      string
 	Limit      int
 	Page       int
@@ -49,17 +46,34 @@ type RaidRanking struct {
 	} `json:"encountersPulled"`
 }
 
+type Realm struct {
+	Id               int    `json:"id"`
+	ConnectedRealmId int    `json:"connectedRealmId"`
+	Name             string `json:"name"`
+	AltName          string `json:"altName"`
+	Slug             string `json:"slug"`
+	AltSlug          string `json:"altSlug"`
+	Locale           string `json:"locale"`
+	IsConnected      bool   `json:"isConnected"`
+}
+
+type RegionInfo struct {
+	Name      string `json:"name"`
+	Slug      string `json:"slug"`
+	ShortName string `json:"short_name"`
+}
+
 // RaidGuild represents a guild in raid-related responses
 // This structure is used in RaidRankings, BossRankings, HallOfFame, etc.
 type RaidGuild struct {
-	Id      int            `json:"id"`
-	Name    string         `json:"name"`
-	Faction string         `json:"faction"`
-	Realm   realms.Realm   `json:"realm"`
-	Region  regions.Region `json:"region"`
-	Path    string         `json:"path"`
-	Logo    string         `json:"logo"`
-	Color   string         `json:"color"`
+	Id      int        `json:"id"`
+	Name    string     `json:"name"`
+	Faction string     `json:"faction"`
+	Realm   Realm      `json:"realm"`
+	Region  RegionInfo `json:"region"`
+	Path    string     `json:"path"`
+	Logo    string     `json:"logo"`
+	Color   string     `json:"color"`
 }
 
 // RaidProgression is a struct that contains the raid progression of a guild
@@ -76,8 +90,7 @@ type RaidProgression struct {
 // in a guild profile response
 // Includes Normal Heroic and Mythic rankings
 type GuildRaidRanking struct {
-	RaidSlug string
-	Normal   struct {
+	Normal struct {
 		World  int `json:"world"`
 		Region int `json:"region"`
 		Realm  int `json:"realm"`
@@ -211,7 +224,7 @@ type bossKillCharacter struct {
 // GuildBossKillQuery requires all fields to be valid when sending
 // a request to the api. Use GetRaids() to see a list of raids and bosses
 type GuildBossKillQuery struct {
-	Region     *regions.Region
+	Region     Region
 	Realm      string
 	GuildName  string
 	RaidSlug   string
@@ -269,7 +282,7 @@ func unmarshalBossKillRoster(k *bossKillResp) []Character {
 }
 
 func validateGuildBossKillQuery(q *GuildBossKillQuery) error {
-	if q.Region == nil {
+	if q.Region == "" {
 		return ErrInvalidRegion
 	}
 
@@ -289,41 +302,21 @@ func validateGuildBossKillQuery(q *GuildBossKillQuery) error {
 		return ErrInvalidBoss
 	}
 
-	if q.Difficulty == "" || !raidDifficltyValid(q.Difficulty) {
+	if !raidDifficltyValid(q.Difficulty) {
 		return ErrInvalidRaidDiff
 	}
 
 	return nil
 }
 
-// Validates raid difficulty before sending to the api
-// making an http request to the api with an invalid difficulty
-// results in an empty result instead of an error message. So
-// we add the error by checking for valid difficulty before sending
-// the request to the api
 func raidDifficltyValid(d RaidDifficulty) bool {
-	if d == NORMAL_RAID || d == HEROIC_RAID || d == MYTHIC_RAID {
-		return true
-	}
-
-	return false
+	return d == NORMAL_RAID || d == HEROIC_RAID || d == MYTHIC_RAID
 }
 
-// validateRaidQuery validates a RaidQuery struct
-// ensures that the required parameters are not empty
 func validateRaidRankingsQuery(rq *RaidQuery) error {
-	if rq.Slug == "" {
-		return ErrInvalidRaidName
+	if err := validateRaidQuery(rq); err != nil {
+		return err
 	}
-
-	if rq.Difficulty == "" || !raidDifficltyValid(rq.Difficulty) {
-		return ErrInvalidRaidDiff
-	}
-
-	if rq.Region == nil {
-		return ErrInvalidRegion
-	}
-
 	if rq.Limit < 0 {
 		return ErrLimitOutOfBounds
 	}
@@ -349,7 +342,7 @@ type BossRankingsQuery struct {
 	RaidSlug   string
 	BossSlug   string
 	Difficulty RaidDifficulty
-	Region     *regions.Region
+	Region     Region
 	Realm      string
 }
 
@@ -368,13 +361,6 @@ type BossRanking struct {
 		LastDefeated  string `json:"lastDefeated"`
 		FirstDefeated string `json:"firstDefeated"`
 	} `json:"encountersDefeated"`
-}
-
-// HallOfFameQuery represents the query parameters for hall of fame
-type HallOfFameQuery struct {
-	RaidSlug   string
-	Difficulty RaidDifficulty
-	Region     *regions.Region
 }
 
 // HallOfFame represents the response from a hall of fame request
@@ -404,13 +390,6 @@ type HallOfFameEntry struct {
 	} `json:"bossKills"`
 }
 
-// RaidProgressionQuery represents the query parameters for raid progression
-type RaidProgressionQuery struct {
-	RaidSlug   string
-	Difficulty RaidDifficulty
-	Region     *regions.Region
-}
-
 // RaidProgressionResponse represents the response from a raid progression request
 type RaidProgressionResponse struct {
 	Progression []RaidProgressionEntry `json:"progression"`
@@ -433,36 +412,23 @@ func validateBossRankingsQuery(q *BossRankingsQuery) error {
 	if q.BossSlug == "" {
 		return ErrInvalidBoss
 	}
-	if q.Difficulty == "" || !raidDifficltyValid(q.Difficulty) {
+	if !raidDifficltyValid(q.Difficulty) {
 		return ErrInvalidRaidDiff
 	}
-	if q.Region == nil {
+	if q.Region == "" {
 		return ErrInvalidRegion
 	}
 	return nil
 }
 
-func validateHallOfFameQuery(q *HallOfFameQuery) error {
-	if q.RaidSlug == "" {
+func validateRaidQuery(q *RaidQuery) error {
+	if q.Slug == "" {
 		return ErrInvalidRaidName
 	}
-	if q.Difficulty == "" || !raidDifficltyValid(q.Difficulty) {
+	if !raidDifficltyValid(q.Difficulty) {
 		return ErrInvalidRaidDiff
 	}
-	if q.Region == nil {
-		return ErrInvalidRegion
-	}
-	return nil
-}
-
-func validateRaidProgressionQuery(q *RaidProgressionQuery) error {
-	if q.RaidSlug == "" {
-		return ErrInvalidRaidName
-	}
-	if q.Difficulty == "" || !raidDifficltyValid(q.Difficulty) {
-		return ErrInvalidRaidDiff
-	}
-	if q.Region == nil {
+	if q.Region == "" {
 		return ErrInvalidRegion
 	}
 	return nil

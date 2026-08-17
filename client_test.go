@@ -1,18 +1,14 @@
 package raiderio_test
 
 import (
-	"bufio"
 	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/tmaffia/raiderio"
-	"github.com/tmaffia/raiderio/expansions"
-	"github.com/tmaffia/raiderio/regions"
 )
 
 var c *raiderio.Client
@@ -29,31 +25,7 @@ func testCtx(timeout bool) (context.Context, context.CancelFunc) {
 }
 
 func setup() {
-	// Try to read .env and .env.local files
-	for _, filename := range []string{".env", ".env.local", ".env.Local"} {
-		func() {
-			file, err := os.Open(filename)
-			if err == nil {
-				defer file.Close()
-				scanner := bufio.NewScanner(file)
-				for scanner.Scan() {
-					line := scanner.Text()
-					parts := strings.SplitN(line, "=", 2)
-					if len(parts) == 2 {
-						key := strings.TrimSpace(parts[0])
-						value := strings.TrimSpace(parts[1])
-						os.Setenv(key, value)
-					}
-				}
-			}
-		}()
-	}
-
-	var opts []raiderio.ClientOption
-	if key := os.Getenv("RAIDERIO_ACCESS_KEY"); key != "" {
-		opts = append(opts, raiderio.WithAccessKey(key))
-	}
-	c = raiderio.NewClient(opts...)
+	c = raiderio.NewClient(os.Getenv("RAIDERIO_ACCESS_KEY"))
 }
 
 func TestMain(m *testing.M) {
@@ -82,11 +54,11 @@ func TestClient_WithAccessKey(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := raiderio.NewClient(raiderio.WithAccessKey("test_key"))
+	client := raiderio.NewClient("test_key")
 	client.ApiUrl = ts.URL
 
 	_, err := client.GetCharacter(context.Background(), &raiderio.CharacterQuery{
-		Region: regions.US,
+		Region: raiderio.US,
 		Realm:  "illidan",
 		Name:   "test",
 	})
@@ -107,14 +79,11 @@ func TestClient_NoAccessKey(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	// Create a local client explicitly WITHOUT an AccessKey
 	client := raiderio.NewClient()
 	client.ApiUrl = ts.URL
-	// Ensure AccessKey is empty (it should be by default, but being explicit)
-	client.AccessKey = ""
 
 	_, err := client.GetCharacter(context.Background(), &raiderio.CharacterQuery{
-		Region: regions.US,
+		Region: raiderio.US,
 		Realm:  "illidan",
 		Name:   "test",
 	})
@@ -127,20 +96,20 @@ func TestClient_NoAccessKey(t *testing.T) {
 func TestGetCharacterProfile(t *testing.T) {
 	testCases := []struct {
 		timeout        bool
-		region         *regions.Region
+		region         raiderio.Region
 		realm          string
 		name           string
 		expectedErrMsg string
 		expectedName   string
 	}{
-		{region: regions.US, realm: "illidan", name: "highervalue", expectedName: "Highervalue"},
-		{region: regions.US, realm: "", name: "highervalue", expectedErrMsg: "invalid realm"},
-		{region: regions.US, realm: "illidan", name: "", expectedErrMsg: "invalid character name"},
-		{region: nil, realm: "illidan", name: "highervalue", expectedErrMsg: "invalid region"},
-		{region: &regions.Region{Slug: "badregion"}, realm: "illidan", name: "impossiblecharactername", expectedErrMsg: "invalid query"},
-		{region: regions.US, realm: "illidan", name: "impossiblecharactername", expectedErrMsg: "character not found"},
-		{region: regions.US, realm: "invalidrealm", name: "highervalue", expectedErrMsg: "invalid realm"},
-		{timeout: true, region: regions.US, realm: "illidan", name: "highervalue", expectedErrMsg: "raiderio api request timeout"},
+		{region: raiderio.US, realm: "illidan", name: "highervalue", expectedName: "Highervalue"},
+		{region: raiderio.US, realm: "", name: "highervalue", expectedErrMsg: "invalid realm"},
+		{region: raiderio.US, realm: "illidan", name: "", expectedErrMsg: "invalid character name"},
+		{region: "", realm: "illidan", name: "highervalue", expectedErrMsg: "invalid region"},
+		{region: raiderio.Region("badregion"), realm: "illidan", name: "impossiblecharactername", expectedErrMsg: "invalid query"},
+		{region: raiderio.US, realm: "illidan", name: "impossiblecharactername", expectedErrMsg: "character not found"},
+		{region: raiderio.US, realm: "invalidrealm", name: "highervalue", expectedErrMsg: "invalid realm"},
+		{timeout: true, region: raiderio.US, realm: "illidan", name: "highervalue", expectedErrMsg: "raiderio api request timeout"},
 	}
 
 	for _, tc := range testCases {
@@ -166,14 +135,14 @@ func TestGetCharacterProfile(t *testing.T) {
 func TestGetCharacterWGear(t *testing.T) {
 	testCases := []struct {
 		timeout        bool
-		region         *regions.Region
+		region         raiderio.Region
 		realm          string
 		name           string
 		expectedErrMsg string
 		expectedName   string
 	}{
-		{region: regions.US, realm: "illidan", name: "highervalue", expectedName: "Highervalue"},
-		{timeout: true, region: regions.US, realm: "illidan", name: "highervalue", expectedErrMsg: "raiderio api request timeout"},
+		{region: raiderio.US, realm: "illidan", name: "highervalue", expectedName: "Highervalue"},
+		{timeout: true, region: raiderio.US, realm: "illidan", name: "highervalue", expectedErrMsg: "raiderio api request timeout"},
 	}
 
 	for _, tc := range testCases {
@@ -203,7 +172,7 @@ func TestGetCharacterWGear(t *testing.T) {
 
 func TestGetCharacterWTalents(t *testing.T) {
 	cq := raiderio.CharacterQuery{
-		Region:        regions.US,
+		Region:        raiderio.US,
 		Realm:         "illidan",
 		Name:          "highervalue",
 		TalentLoadout: true,
@@ -220,20 +189,20 @@ func TestGetCharacterWTalents(t *testing.T) {
 func TestGetGuild(t *testing.T) {
 	testCases := []struct {
 		timeout        bool
-		region         *regions.Region
+		region         raiderio.Region
 		realm          string
 		name           string
 		expectedErrMsg string
 		expectedName   string
 	}{
-		{region: regions.US, realm: "illidan", name: "warpath", expectedName: "Warpath"},
-		{region: regions.US, realm: "", name: "warpath", expectedErrMsg: "invalid realm"},
-		{region: regions.US, realm: "illidan", name: "", expectedErrMsg: "invalid guild name"},
-		{region: nil, realm: "illidan", name: "highervalue", expectedErrMsg: "invalid region"},
-		{region: &regions.Region{Slug: "badregion"}, realm: "illidan", name: "warpath", expectedErrMsg: "invalid query"},
-		{region: regions.US, realm: "illidan", name: "impossible_guild_name", expectedErrMsg: "guild not found"},
-		{region: regions.US, realm: "invalidrealm", name: "highervalue", expectedErrMsg: "invalid realm"},
-		{timeout: true, region: regions.US, realm: "illidan", name: "highervalue", expectedErrMsg: "raiderio api request timeout"},
+		{region: raiderio.US, realm: "illidan", name: "warpath", expectedName: "Warpath"},
+		{region: raiderio.US, realm: "", name: "warpath", expectedErrMsg: "invalid realm"},
+		{region: raiderio.US, realm: "illidan", name: "", expectedErrMsg: "invalid guild name"},
+		{region: "", realm: "illidan", name: "highervalue", expectedErrMsg: "invalid region"},
+		{region: raiderio.Region("badregion"), realm: "illidan", name: "warpath", expectedErrMsg: "invalid query"},
+		{region: raiderio.US, realm: "illidan", name: "impossible_guild_name", expectedErrMsg: "guild not found"},
+		{region: raiderio.US, realm: "invalidrealm", name: "highervalue", expectedErrMsg: "invalid realm"},
+		{timeout: true, region: raiderio.US, realm: "illidan", name: "highervalue", expectedErrMsg: "raiderio api request timeout"},
 	}
 
 	for _, tc := range testCases {
@@ -257,80 +226,55 @@ func TestGetGuild(t *testing.T) {
 }
 
 func TestGetGuildWMembers(t *testing.T) {
-	testCases := []struct {
-		region *regions.Region
-		realm  string
-		name   string
-	}{
-		{region: regions.US, realm: "illidan", name: "warpath"},
+	ctx, cancel := ctx()
+	defer cancel()
+	profile, err := c.GetGuild(ctx, &raiderio.GuildQuery{
+		Region:  raiderio.US,
+		Realm:   "illidan",
+		Name:    "warpath",
+		Members: true,
+	})
+	if err != nil {
+		t.Fatalf("Error getting guild: %v", err)
 	}
-
-	for range testCases {
-		ctx, cancel := ctx()
-		defer cancel()
-		profile, err := c.GetGuild(ctx, &raiderio.GuildQuery{
-			Region:  regions.US,
-			Realm:   "illidan",
-			Name:    "warpath",
-			Members: true,
-		})
-
-		if err != nil {
-			t.Fatalf("Error getting guild: %v", err)
-		}
-
-		if len(profile.Members) == 0 {
-			t.Fatalf("Error getting guild members")
-		}
+	if len(profile.Members) == 0 {
+		t.Fatalf("Error getting guild members")
 	}
-
 }
 
 func TestGetGuildWRaidProgression(t *testing.T) {
-	testCases := []struct {
-		region *regions.Region
-		realm  string
-		name   string
-	}{
-		{region: regions.US, realm: "illidan", name: "warpath"},
+	ctx, cancel := ctx()
+	defer cancel()
+	profile, err := c.GetGuild(ctx, &raiderio.GuildQuery{
+		Region:          raiderio.US,
+		Realm:           "illidan",
+		Name:            "warpath",
+		RaidProgression: true,
+	})
+	if err != nil {
+		t.Fatalf("Error getting guild %v", err)
 	}
-
-	for range testCases {
-		ctx, cancel := ctx()
-		defer cancel()
-		profile, err := c.GetGuild(ctx, &raiderio.GuildQuery{
-			Region:          regions.US,
-			Realm:           "illidan",
-			Name:            "warpath",
-			RaidProgression: true,
-		})
-
-		if err != nil {
-			t.Errorf("Error getting guild %v", err)
-		}
-
-		ok := false
-		for _, p := range profile.RaidProgression {
-			ok = ok || p.Summary != ""
-		}
-		if !ok {
-			t.Fatalf("Error getting guild raid progression, got: %v", profile.RaidProgression)
-		}
+	ok := false
+	for _, p := range profile.RaidProgression {
+		ok = ok || p.Summary != ""
+	}
+	if !ok {
+		t.Fatalf("Error getting guild raid progression, got: %v", profile.RaidProgression)
 	}
 }
 
 func TestGetGuildWRaidRankings(t *testing.T) {
 	testCases := []struct {
 		timeout        bool
-		region         *regions.Region
+		region         raiderio.Region
 		realm          string
 		name           string
 		raidName       string
 		expectedErrMsg string
 	}{
-		{region: regions.US, realm: "illidan", name: "warpath",
+		{region: raiderio.US, realm: "illidan", name: "warpath",
 			raidName: "tier-mn-1"},
-		{timeout: true, region: regions.US, realm: "illidan", name: "warpath",
+		{timeout: true, region: raiderio.US, realm: "illidan", name: "warpath",
 			raidName:       "tier-mn-1",
 			expectedErrMsg: "raiderio api request timeout"},
 	}
@@ -340,7 +284,7 @@ func TestGetGuildWRaidRankings(t *testing.T) {
 		defer cancel()
 
 		profile, err := c.GetGuild(ctx, &raiderio.GuildQuery{
-			Region:       regions.US,
+			Region:       raiderio.US,
 			Realm:        "illidan",
 			Name:         "warpath",
 			RaidRankings: true,
@@ -362,7 +306,7 @@ func TestGetGuildWRaidRankings(t *testing.T) {
 
 func TestGetGuildBossKill(t *testing.T) {
 	testCases := []struct {
-		region                *regions.Region
+		region                raiderio.Region
 		realm                 string
 		guildName             string
 		raidSlug              string
@@ -373,40 +317,40 @@ func TestGetGuildBossKill(t *testing.T) {
 		expectedErrMsg        string
 		timeout               bool
 	}{
-		{region: regions.US, realm: "illidan", guildName: "warpath",
+		{region: raiderio.US, realm: "illidan", guildName: "warpath",
 			raidSlug: "vault-of-the-incarnates", bossSlug: "terros",
 			difficulty: raiderio.MYTHIC_RAID, expectedCharacterName: "Drbananaphd"},
-		{region: nil, difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
+		{region: "", difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
 			guildName: "warpath", raidSlug: "vault-of-the-incarnates",
 			bossSlug: "terros", expectedErrMsg: "invalid region"},
-		{region: regions.US, difficulty: raiderio.MYTHIC_RAID,
+		{region: raiderio.US, difficulty: raiderio.MYTHIC_RAID,
 			realm: "invalid-realm", guildName: "warpath", raidSlug: "vault-of-the-incarnates",
 			bossSlug: "terros", expectedErrMsg: "invalid realm"},
-		{region: regions.US, difficulty: raiderio.MYTHIC_RAID,
+		{region: raiderio.US, difficulty: raiderio.MYTHIC_RAID,
 			guildName: "warpath", raidSlug: "vault-of-the-incarnates",
 			bossSlug: "terros", expectedErrMsg: "invalid realm"},
-		{region: regions.US, difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
+		{region: raiderio.US, difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
 			guildName: "impossible-guild_name", raidSlug: "vault-of-the-incarnates",
 			bossSlug: "terros", expectedErrMsg: "guild not found"},
-		{region: regions.US, difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
+		{region: raiderio.US, difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
 			raidSlug: "vault-of-the-incarnates", bossSlug: "terros",
 			expectedErrMsg: "invalid guild name"},
-		{region: regions.US, difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
+		{region: raiderio.US, difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
 			guildName: "warpath", raidSlug: "invalid-raid-slug", bossSlug: "terros",
 			expectedErrMsg: "invalid query"},
-		{region: regions.US, difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
+		{region: raiderio.US, difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
 			guildName: "warpath", bossSlug: "terros",
 			expectedErrMsg: "invalid raid name"},
-		{region: regions.US, difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
+		{region: raiderio.US, difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
 			guildName: "warpath", raidSlug: "vault-of-the-incarnates",
 			bossSlug: "invalid-boss-slug", expectedErrMsg: "invalid boss"},
-		{region: regions.US, difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
+		{region: raiderio.US, difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
 			guildName: "warpath", raidSlug: "vault-of-the-incarnates",
 			expectedErrMsg: "invalid boss"},
-		{region: regions.US, realm: "illidan", guildName: "warpath",
+		{region: raiderio.US, realm: "illidan", guildName: "warpath",
 			raidSlug: "vault-of-the-incarnates", bossSlug: "terros",
 			expectedErrMsg: "invalid raid difficulty"},
-		{timeout: true, region: regions.US, realm: "illidan", guildName: "warpath",
+		{timeout: true, region: raiderio.US, realm: "illidan", guildName: "warpath",
 			raidSlug: "vault-of-the-incarnates", bossSlug: "terros",
 			difficulty:     raiderio.MYTHIC_RAID,
 			expectedErrMsg: "raiderio api request timeout"},
@@ -438,14 +382,14 @@ func TestGetGuildBossKill(t *testing.T) {
 func TestGetRaids(t *testing.T) {
 	testCases := []struct {
 		timeout          bool
-		expansion        expansions.Expansion
+		expansion        raiderio.Expansion
 		raidName         string
 		expectedRaidName string
 		expectedErrMsg   string
 	}{
-		{expansion: expansions.DRAGONFLIGHT, raidName: "aberrus-the-shadowed-crucible", expectedRaidName: "Aberrus, the Shadowed Crucible"},
-		{expansion: expansions.MIDNIGHT, raidName: "sporefall", expectedRaidName: "Sporefall"},
-		{timeout: true, expansion: expansions.DRAGONFLIGHT, raidName: "aberrus-the-shadowed-crucible", expectedErrMsg: "raiderio api request timeout"},
+		{expansion: raiderio.DRAGONFLIGHT, raidName: "aberrus-the-shadowed-crucible", expectedRaidName: "Aberrus, the Shadowed Crucible"},
+		{expansion: raiderio.MIDNIGHT, raidName: "sporefall", expectedRaidName: "Sporefall"},
+		{timeout: true, expansion: raiderio.DRAGONFLIGHT, raidName: "aberrus-the-shadowed-crucible", expectedErrMsg: "raiderio api request timeout"},
 		{expansion: 2, expectedErrMsg: "unsupported expansion"},
 	}
 
@@ -473,34 +417,34 @@ func TestGetRaidRankings(t *testing.T) {
 		timeout        bool
 		slug           string
 		difficulty     raiderio.RaidDifficulty
-		region         *regions.Region
+		region         raiderio.Region
 		realm          string
 		limit          int
 		page           int
 		expectedErrMsg string
 	}{
-		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.WORLD, limit: 1},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.US,
+		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: raiderio.WORLD, limit: 1},
+		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US,
 			realm: "proudmoore", limit: 1},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: "mythic", region: regions.EU, limit: 1},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.US,
+		{slug: "aberrus-the-shadowed-crucible", difficulty: "mythic", region: raiderio.EU, limit: 1},
+		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US,
 			realm: "illidan", limit: 1},
-		{slug: "invalid raid slug", difficulty: raiderio.MYTHIC_RAID, region: regions.US, realm: "illidan",
+		{slug: "invalid raid slug", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, realm: "illidan",
 			expectedErrMsg: "invalid query"},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: "mythic", region: nil, realm: "illidan", expectedErrMsg: "invalid region"},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: "", region: regions.US, realm: "illidan",
+		{slug: "aberrus-the-shadowed-crucible", difficulty: "mythic", region: "", realm: "illidan", expectedErrMsg: "invalid region"},
+		{slug: "aberrus-the-shadowed-crucible", difficulty: "", region: raiderio.US, realm: "illidan",
 			expectedErrMsg: "invalid raid difficulty"},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: "invalid-difficulty", region: regions.US, realm: "illidan",
+		{slug: "aberrus-the-shadowed-crucible", difficulty: "invalid-difficulty", region: raiderio.US, realm: "illidan",
 			expectedErrMsg: "invalid raid difficulty"},
-		{slug: "", difficulty: raiderio.MYTHIC_RAID, region: regions.US, realm: "illidan",
+		{slug: "", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, realm: "illidan",
 			expectedErrMsg: "invalid raid name"},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.WORLD, limit: 20},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.WORLD, limit: -20,
+		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: raiderio.WORLD, limit: 20},
+		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: raiderio.WORLD, limit: -20,
 			expectedErrMsg: "limit must be a positive int"},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.US, limit: 40, page: 2},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.US, limit: 40,
+		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, limit: 40, page: 2},
+		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, limit: 40,
 			page: -2, expectedErrMsg: "page must be a positive int"},
-		{timeout: true, slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.US,
+		{timeout: true, slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US,
 			expectedErrMsg: "raiderio api request timeout"},
 	}
 
@@ -546,17 +490,17 @@ func TestGetBossRankings(t *testing.T) {
 		raidSlug       string
 		bossSlug       string
 		difficulty     raiderio.RaidDifficulty
-		region         *regions.Region
+		region         raiderio.Region
 		realm          string
 		expectedErrMsg string
 	}{
-		{raidSlug: "nerubar-palace", bossSlug: "queen-ansurek", difficulty: raiderio.MYTHIC_RAID, region: regions.US},
-		{raidSlug: "nerubar-palace", bossSlug: "queen-ansurek", difficulty: raiderio.MYTHIC_RAID, region: regions.US, realm: "illidan"},
-		{raidSlug: "", bossSlug: "queen-ansurek", difficulty: raiderio.MYTHIC_RAID, region: regions.US, expectedErrMsg: "invalid raid name"},
-		{raidSlug: "nerubar-palace", bossSlug: "", difficulty: raiderio.MYTHIC_RAID, region: regions.US, expectedErrMsg: "invalid boss"},
-		{raidSlug: "nerubar-palace", bossSlug: "queen-ansurek", difficulty: "", region: regions.US, expectedErrMsg: "invalid raid difficulty"},
-		{raidSlug: "nerubar-palace", bossSlug: "queen-ansurek", difficulty: raiderio.MYTHIC_RAID, region: nil, expectedErrMsg: "invalid region"},
-		{timeout: true, raidSlug: "nerubar-palace", bossSlug: "queen-ansurek", difficulty: raiderio.MYTHIC_RAID, region: regions.US, expectedErrMsg: "raiderio api request timeout"},
+		{raidSlug: "nerubar-palace", bossSlug: "queen-ansurek", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US},
+		{raidSlug: "nerubar-palace", bossSlug: "queen-ansurek", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, realm: "illidan"},
+		{raidSlug: "", bossSlug: "queen-ansurek", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, expectedErrMsg: "invalid raid name"},
+		{raidSlug: "nerubar-palace", bossSlug: "", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, expectedErrMsg: "invalid boss"},
+		{raidSlug: "nerubar-palace", bossSlug: "queen-ansurek", difficulty: "", region: raiderio.US, expectedErrMsg: "invalid raid difficulty"},
+		{raidSlug: "nerubar-palace", bossSlug: "queen-ansurek", difficulty: raiderio.MYTHIC_RAID, region: "", expectedErrMsg: "invalid region"},
+		{timeout: true, raidSlug: "nerubar-palace", bossSlug: "queen-ansurek", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, expectedErrMsg: "raiderio api request timeout"},
 	}
 
 	for _, tc := range testCases {
@@ -586,28 +530,27 @@ func TestGetBossRankings(t *testing.T) {
 func TestGetHallOfFame(t *testing.T) {
 	// Create a client without access key
 	noAuthClient := raiderio.NewClient()
-	noAuthClient.AccessKey = ""
 
 	testCases := []struct {
 		timeout        bool
 		raidSlug       string
 		difficulty     raiderio.RaidDifficulty
-		region         *regions.Region
+		region         raiderio.Region
 		expectedErrMsg string
 	}{
-		{raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: regions.US},
-		{raidSlug: "", difficulty: raiderio.MYTHIC_RAID, region: regions.US, expectedErrMsg: "invalid raid name"},
-		{raidSlug: "nerubar-palace", difficulty: "", region: regions.US, expectedErrMsg: "invalid raid difficulty"},
-		{raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: nil, expectedErrMsg: "invalid region"},
-		{timeout: true, raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: regions.US, expectedErrMsg: "raiderio api request timeout"},
+		{raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US},
+		{raidSlug: "", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, expectedErrMsg: "invalid raid name"},
+		{raidSlug: "nerubar-palace", difficulty: "", region: raiderio.US, expectedErrMsg: "invalid raid difficulty"},
+		{raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: "", expectedErrMsg: "invalid region"},
+		{timeout: true, raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, expectedErrMsg: "raiderio api request timeout"},
 	}
 
 	for _, tc := range testCases {
 		ctx, cancel := testCtx(tc.timeout)
 		defer cancel()
 
-		hof, err := noAuthClient.GetHallOfFame(ctx, &raiderio.HallOfFameQuery{
-			RaidSlug:   tc.raidSlug,
+		hof, err := noAuthClient.GetHallOfFame(ctx, &raiderio.RaidQuery{
+			Slug:       tc.raidSlug,
 			Difficulty: tc.difficulty,
 			Region:     tc.region,
 		})
@@ -627,28 +570,27 @@ func TestGetHallOfFame(t *testing.T) {
 func TestGetRaidProgression(t *testing.T) {
 	// Create a client without access key to test if that's the issue
 	noAuthClient := raiderio.NewClient()
-	noAuthClient.AccessKey = ""
 
 	testCases := []struct {
 		timeout        bool
 		raidSlug       string
 		difficulty     raiderio.RaidDifficulty
-		region         *regions.Region
+		region         raiderio.Region
 		expectedErrMsg string
 	}{
-		{raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: regions.US},
-		{raidSlug: "", difficulty: raiderio.MYTHIC_RAID, region: regions.US, expectedErrMsg: "invalid raid name"},
-		{raidSlug: "nerubar-palace", difficulty: "", region: regions.US, expectedErrMsg: "invalid raid difficulty"},
-		{raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: nil, expectedErrMsg: "invalid region"},
-		{timeout: true, raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: regions.US, expectedErrMsg: "raiderio api request timeout"},
+		{raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US},
+		{raidSlug: "", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, expectedErrMsg: "invalid raid name"},
+		{raidSlug: "nerubar-palace", difficulty: "", region: raiderio.US, expectedErrMsg: "invalid raid difficulty"},
+		{raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: "", expectedErrMsg: "invalid region"},
+		{timeout: true, raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, expectedErrMsg: "raiderio api request timeout"},
 	}
 
 	for _, tc := range testCases {
 		ctx, cancel := testCtx(tc.timeout)
 		defer cancel()
 
-		prog, err := noAuthClient.GetRaidProgression(ctx, &raiderio.RaidProgressionQuery{
-			RaidSlug:   tc.raidSlug,
+		prog, err := noAuthClient.GetRaidProgression(ctx, &raiderio.RaidQuery{
+			Slug:       tc.raidSlug,
 			Difficulty: tc.difficulty,
 			Region:     tc.region,
 		})
