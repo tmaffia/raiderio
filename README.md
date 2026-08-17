@@ -2,71 +2,140 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/tmaffia/raiderio.svg)](https://pkg.go.dev/github.com/tmaffia/raiderio)
 ![Go Build & Test](https://github.com/tmaffia/raiderio/actions/workflows/go.yml/badge.svg)
-[![Go Report Card](https://goreportcard.com/badge/github.com/tmaffia/raiderio)](https://goreportcard.com/report/github.com/tmaffia/raiderio)
 
 Wrapper for the raider.io API written in Go
 
 ## Usage
 
-### Include module in your go.mod
+### Add the module
 
 ```
-include github.com/tmaffia/raiderio v0.5.0
+go get github.com/tmaffia/raiderio
 ```
 
 ### Authentication
 
 The Raider.IO API provides higher rate limits for authenticated requests. You can generate an API key by registering your application on the [Raider.IO Application Settings](https://raider.io/settings/apps) page.
 
-To use your API key with the client:
-
 ```go
-client := raiderio.NewClient("YOUR_API_KEY")
+package main
+
+import "github.com/tmaffia/raiderio"
+
+func main() {
+	_ = raiderio.NewClient("YOUR_API_KEY")
+}
 ```
+
+`NewClient()` with no argument works for unauthenticated requests.
 
 ### Get a Character Profile
 
 ```go
-client := raiderio.NewClient()
+package main
 
-profile, err := client.GetCharacter(&CharacterQuery{
- Region: raiderio.US,
- Realm:  "illidan",
- Name:   "thehighvalue",
- TalentLoadout: true,
-})
+import (
+	"context"
+	"fmt"
 
-fmt.Println(profile.Class) // Mage
+	"github.com/tmaffia/raiderio"
+)
+
+func main() {
+	client := raiderio.NewClient()
+
+	profile, err := client.GetCharacter(context.Background(), &raiderio.CharacterQuery{
+		Region:        raiderio.US,
+		Realm:         "illidan",
+		Name:          "thehighvalue",
+		TalentLoadout: true,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(profile.Class) // Mage
+}
 ```
 
 ### Get a Guild Profile
 
 ```go
-gq := raiderio.GuildQuery{
- Region: raiderio.US,
- Realm:  "illidan",
- Name:   "warpath",
- Members: true,
-}
+package main
 
-profile, err := client.GetGuild(&gq)
+import (
+	"context"
+	"fmt"
+
+	"github.com/tmaffia/raiderio"
+)
+
+func main() {
+	client := raiderio.NewClient()
+
+	profile, err := client.GetGuild(context.Background(), &raiderio.GuildQuery{
+		Region:  raiderio.US,
+		Realm:   "illidan",
+		Name:    "warpath",
+		Members: true,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(profile.Name)
+}
 ```
 
 ### Get Raid Rankings for a specific raid
 
 ```go
-rq := raiderio.RaidQuery{
- Slug:   "nerubar-palace",
- Difficulty: raiderio.MYTHIC_RAID,
- Region:  raiderio.US,
- Limit:   10,
-}
+package main
 
-rankings, err := client.GetRaidRankings(&rq)
+import (
+	"context"
+	"fmt"
+
+	"github.com/tmaffia/raiderio"
+)
+
+func main() {
+	client := raiderio.NewClient()
+
+	rankings, err := client.GetRaidRankings(context.Background(), &raiderio.RaidQuery{
+		Slug:       "nerubar-palace",
+		Difficulty: raiderio.MYTHIC_RAID,
+		Region:     raiderio.US,
+		Limit:      10,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(len(rankings.RaidRanking))
+}
 ```
 
 ### Get Static Raid data by expansion
 
 ```go
-raids, err := client.GetRaids(raiderio.WAR_WITHIN)
+package main
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/tmaffia/raiderio"
+)
+
+func main() {
+	client := raiderio.NewClient()
+
+	raids, err := client.GetRaids(context.Background(), raiderio.WAR_WITHIN)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(len(raids.Raids))
+}
 ```
