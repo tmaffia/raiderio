@@ -46,6 +46,7 @@ type RaidRanking struct {
 	} `json:"encountersPulled"`
 }
 
+// Realm is a struct that represents a realm available in the Raider.IO API
 type Realm struct {
 	Id               int    `json:"id"`
 	ConnectedRealmId int    `json:"connectedRealmId"`
@@ -57,6 +58,7 @@ type Realm struct {
 	IsConnected      bool   `json:"isConnected"`
 }
 
+// RegionInfo is a struct that represents a region as returned in API responses
 type RegionInfo struct {
 	Name      string `json:"name"`
 	Slug      string `json:"slug"`

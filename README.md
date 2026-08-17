@@ -56,7 +56,7 @@ profile, err := client.GetGuild(&gq)
 
 ```go
 rq := raiderio.RaidQuery{
- Name:   "nerubar-palace",
+ Slug:   "nerubar-palace",
  Difficulty: raiderio.MYTHIC_RAID,
  Region:  raiderio.US,
  Limit:   10,
