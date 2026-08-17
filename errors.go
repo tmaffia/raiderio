@@ -1,6 +1,7 @@
 package raiderio
 
 import (
+	"context"
 	"errors"
 	"strings"
 )
@@ -22,7 +23,11 @@ var (
 	ErrInvalidBoss       = errors.New("invalid boss")
 	ErrInvalidQuery      = errors.New("invalid query")
 	ErrApiTimeout        = errors.New("raiderio api request timeout")
-	ErrUnexpected        = errors.New("unexpected error")
+	// ErrUnexpected is wrapped with the response status and body
+	// (fmt.Errorf("%w: %d %s", ...)) when returned from getAPIResponse,
+	// so callers can errors.Is against it and still inspect err.Error()
+	// for what the API actually returned.
+	ErrUnexpected = errors.New("unexpected error")
 )
 
 // Turns api errors into standardized go errors with
@@ -68,7 +73,7 @@ func wrapApiError(responseBody *apiErrorResponse) error {
 }
 
 func wrapHttpError(err error) error {
-	if strings.Contains(err.Error(), "context deadline exceeded") {
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
 		return ErrApiTimeout
 	}
 	return ErrUnexpected

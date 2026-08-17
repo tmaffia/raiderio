@@ -1,9 +1,15 @@
 package raiderio
 
 import (
+	"context"
 	"errors"
 	"testing"
 )
+
+type hiddenErr struct{ error }
+
+func (e hiddenErr) Error() string { return "transport failed" }
+func (e hiddenErr) Unwrap() error { return e.error }
 
 func TestWrapApiError(t *testing.T) {
 	cases := []struct {
@@ -30,7 +36,10 @@ func TestWrapApiError(t *testing.T) {
 }
 
 func TestWrapHttpError(t *testing.T) {
-	if got := wrapHttpError(errors.New("Get: context deadline exceeded")); !errors.Is(got, ErrApiTimeout) {
+	if got := wrapHttpError(hiddenErr{context.DeadlineExceeded}); !errors.Is(got, ErrApiTimeout) {
+		t.Fatal(got)
+	}
+	if got := wrapHttpError(hiddenErr{context.Canceled}); !errors.Is(got, ErrApiTimeout) {
 		t.Fatal(got)
 	}
 	if got := wrapHttpError(errors.New("connection refused")); !errors.Is(got, ErrUnexpected) {
