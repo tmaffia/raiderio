@@ -32,7 +32,7 @@ func NewClient(accessKey ...string) *Client {
 
 // GetCharacter retrieves a character profile from the Raider.IO API
 // It returns an error if the API returns a non-200 status code, or if the
-// response body cannot be read or mapped to the CharacterProfile struct
+// response body cannot be read or mapped to the Character struct
 func (c *Client) GetCharacter(ctx context.Context, cq *CharacterQuery) (*Character, error) {
 	if err := validateCharacterQuery(cq); err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func (c *Client) GetCharacter(ctx context.Context, cq *CharacterQuery) (*Charact
 
 // GetGuild retrieves a guild profile from the Raider.IO API
 // It returns an error if the API returns a non-200 status code, or if the
-// response body cannot be read or mapped to the GuildProfile struct
+// response body cannot be read or mapped to the Guild struct
 func (c *Client) GetGuild(ctx context.Context, gq *GuildQuery) (*Guild, error) {
 	if err := createGuildQuery(gq); err != nil {
 		return nil, err

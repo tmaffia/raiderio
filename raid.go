@@ -310,14 +310,14 @@ func validateGuildBossKillQuery(q *GuildBossKillQuery) error {
 		return ErrInvalidBoss
 	}
 
-	if !raidDifficltyValid(q.Difficulty) {
+	if !raidDifficultyValid(q.Difficulty) {
 		return ErrInvalidRaidDiff
 	}
 
 	return nil
 }
 
-func raidDifficltyValid(d RaidDifficulty) bool {
+func raidDifficultyValid(d RaidDifficulty) bool {
 	return d == NORMAL_RAID || d == HEROIC_RAID || d == MYTHIC_RAID
 }
 
@@ -420,7 +420,7 @@ func validateBossRankingsQuery(q *BossRankingsQuery) error {
 	if q.BossSlug == "" {
 		return ErrInvalidBoss
 	}
-	if !raidDifficltyValid(q.Difficulty) {
+	if !raidDifficultyValid(q.Difficulty) {
 		return ErrInvalidRaidDiff
 	}
 	if q.Region == "" {
@@ -433,7 +433,7 @@ func validateRaidQuery(q *RaidQuery) error {
 	if q.Slug == "" {
 		return ErrInvalidRaidName
 	}
-	if !raidDifficltyValid(q.Difficulty) {
+	if !raidDifficultyValid(q.Difficulty) {
 		return ErrInvalidRaidDiff
 	}
 	if q.Region == "" {
