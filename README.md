@@ -139,3 +139,87 @@ func main() {
 	fmt.Println(len(raids.Raids))
 }
 ```
+
+### Get the current Mythic+ affixes
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/tmaffia/raiderio"
+)
+
+func main() {
+	client := raiderio.NewClient()
+
+	affixes, err := client.GetMythicPlusAffixes(context.Background(), &raiderio.AffixesQuery{
+		Region: raiderio.US,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(affixes.Title)
+}
+```
+
+### Get a character's Mythic+ score
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/tmaffia/raiderio"
+)
+
+func main() {
+	client := raiderio.NewClient()
+
+	profile, err := client.GetCharacter(context.Background(), &raiderio.CharacterQuery{
+		Region:                   raiderio.US,
+		Realm:                    "illidan",
+		Name:                     "thehighvalue",
+		MythicPlusScoresBySeason: []string{"current"},
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(profile.MythicPlusScoresBySeason[0].Scores.All)
+}
+```
+
+### Get the Mythic+ runs leaderboard
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/tmaffia/raiderio"
+)
+
+func main() {
+	client := raiderio.NewClient()
+
+	runs, err := client.GetMythicPlusRuns(context.Background(), &raiderio.MythicPlusRunsQuery{
+		Region:  raiderio.US,
+		Season:  "season-tww-3",
+		Dungeon: "all",
+		Affixes: "all",
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(len(runs.Rankings))
+}
+```

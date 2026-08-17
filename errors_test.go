@@ -25,6 +25,9 @@ func TestWrapApiError(t *testing.T) {
 		{"Could not find requested raid", ErrInvalidRaid},
 		{"Requested unsupported expansion_id", ErrUnsupportedExpac},
 		{"Invalid request query input", ErrInvalidQuery},
+		{`"region" must be one of [us, eu, tw, kr, cn, world]`, ErrInvalidRegion},
+		{"Could not find data for season bogus", ErrInvalidSeason},
+		{"could not find keystone run", ErrRunNotFound},
 		{"something else", ErrUnexpected},
 	}
 	for _, tc := range cases {

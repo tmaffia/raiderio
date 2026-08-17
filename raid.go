@@ -65,6 +65,16 @@ type RegionInfo struct {
 	ShortName string `json:"short_name"`
 }
 
+// RegionTimestamps holds a per-region timestamp, used for raid and
+// mythic plus season start/end dates
+type RegionTimestamps struct {
+	Us time.Time `json:"us"`
+	Eu time.Time `json:"eu"`
+	Tw time.Time `json:"tw"`
+	Kr time.Time `json:"kr"`
+	Cn time.Time `json:"cn"`
+}
+
 // RaidGuild represents a guild in raid-related responses
 // This structure is used in RaidRankings, BossRankings, HallOfFame, etc.
 type RaidGuild struct {
@@ -121,25 +131,13 @@ type Raids struct {
 // Raid is a struct that represents a raid in a raid static
 // data response. Includes raid encounters and other static data
 type Raid struct {
-	Id        int    `json:"id"`
-	Slug      string `json:"slug"`
-	Name      string `json:"name"`
-	ShortName string `json:"short_name"`
-	Icon      string `json:"icon"`
-	Starts    struct {
-		Us time.Time `json:"us"`
-		Eu time.Time `json:"eu"`
-		Tw time.Time `json:"tw"`
-		Kr time.Time `json:"kr"`
-		Cn time.Time `json:"cn"`
-	} `json:"starts"`
-	Ends struct {
-		Us time.Time `json:"us"`
-		Eu time.Time `json:"eu"`
-		Tw time.Time `json:"tw"`
-		Kr time.Time `json:"kr"`
-		Cn time.Time `json:"cn"`
-	} `json:"ends"`
+	Id        int              `json:"id"`
+	Slug      string           `json:"slug"`
+	Name      string           `json:"name"`
+	ShortName string           `json:"short_name"`
+	Icon      string           `json:"icon"`
+	Starts    RegionTimestamps `json:"starts"`
+	Ends      RegionTimestamps `json:"ends"`
 
 	Encounters []Encounter `json:"encounters"`
 }

@@ -1,0 +1,51 @@
+{
+  "realmListing": {
+    "region": { "name": "United States & Oceania", "slug": "us", "short_name": "US" },
+    "affixes": [
+      {
+        "id": 162,
+        "icon": "inv_cosmicvoid_nova",
+        "slug": "xalataths-bargain-pulsar",
+        "name": { "en": "Xal'atath's Bargain: Pulsar", "de": "Xal'ataths Handel: Pulsare" },
+        "description": { "en": "While in combat, Xal'atath summons pulsars that orbit players." }
+      }
+    ],
+    "realms": [
+      {
+        "id": 121,
+        "connectedRealms": [
+          {
+            "id": 247,
+            "connectedRealmId": 121,
+            "name": "Aegwynn",
+            "altName": null,
+            "slug": "aegwynn",
+            "altSlug": "aegwynn",
+            "locale": "en_US",
+            "isConnected": true
+          }
+        ],
+        "dungeons": [
+          {
+            "dungeon": {
+              "type": "dungeon",
+              "id": 14032,
+              "name": "Algeth'ar Academy",
+              "short_name": "AA",
+              "slug": "algethar-academy",
+              "expansion_id": 9,
+              "icon_url": "/images/wow/icons/large/achievement_dungeon_dragonacademy.jpg",
+              "patch": "10.0.2",
+              "wowInstanceId": 2526,
+              "map_challenge_mode_id": 402,
+              "keystone_timer_ms": 1860999,
+              "num_bosses": 4,
+              "group_finder_activity_ids": [1157, 1158]
+            },
+            "lowest": null
+          }
+        ]
+      }
+    ]
+  }
+}
