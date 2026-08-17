@@ -1,1 +1,139 @@
-{"raidRankings":[{"rank":1,"region_rank":1,"guild":{"id":1,"name":"Liquid","faction":"horde"}}]}
+{
+  "raidRankings": [
+    {
+      "rank": 1,
+      "regionRank": 1,
+      "guild": {
+        "id": 1712677,
+        "name": "Liquid",
+        "faction": "horde",
+        "realm": {
+          "id": 369,
+          "connectedRealmId": 207,
+          "name": "Illidan",
+          "altName": null,
+          "slug": "illidan",
+          "altSlug": "illidan",
+          "locale": "en_US",
+          "isConnected": false
+        },
+        "region": {
+          "name": "United States & Oceania",
+          "slug": "us",
+          "short_name": "US"
+        },
+        "path": "/guilds/us/illidan/Liquid",
+        "logo": "https://u-wowretail.raiderio.net/28d1/2025/02/24/NfQeWujdaKUAKUVS8eUQuDeo3H/image.png",
+        "color": "#ffffff"
+      },
+      "encountersDefeated": [
+        {
+          "slug": "ulgrax-the-devourer",
+          "lastDefeated": "2025-03-04T01:05:21.000Z",
+          "firstDefeated": "2024-09-17T22:04:00.000Z"
+        },
+        {
+          "slug": "the-bloodbound-horror",
+          "lastDefeated": "2025-03-04T01:10:07.000Z",
+          "firstDefeated": "2024-09-17T22:19:56.000Z"
+        },
+        {
+          "slug": "sikran",
+          "lastDefeated": "2025-03-04T01:17:25.000Z",
+          "firstDefeated": "2024-09-17T22:37:20.000Z"
+        },
+        {
+          "slug": "rashanan",
+          "lastDefeated": "2025-03-04T01:22:41.000Z",
+          "firstDefeated": "2024-09-17T22:53:05.000Z"
+        },
+        {
+          "slug": "broodtwister-ovinax",
+          "lastDefeated": "2025-02-21T23:01:31.000Z",
+          "firstDefeated": "2024-09-20T03:41:57.000Z"
+        },
+        {
+          "slug": "nexus-princess-kyveza",
+          "lastDefeated": "2025-03-04T01:30:13.000Z",
+          "firstDefeated": "2024-09-22T21:45:17.000Z"
+        },
+        {
+          "slug": "the-silken-court",
+          "lastDefeated": "2025-03-04T01:39:20.000Z",
+          "firstDefeated": "2024-09-24T07:08:40.000Z"
+        },
+        {
+          "slug": "queen-ansurek",
+          "lastDefeated": "2025-03-04T02:10:53.000Z",
+          "firstDefeated": "2024-09-29T07:02:27.000Z"
+        }
+      ],
+      "encountersPulled": [
+        {
+          "id": 1469761,
+          "slug": "ulgrax-the-devourer",
+          "numPulls": 1,
+          "pullStartedAt": "2024-09-17T21:57:15Z",
+          "bestPercent": 0,
+          "isDefeated": true
+        },
+        {
+          "id": 1469814,
+          "slug": "the-bloodbound-horror",
+          "numPulls": 1,
+          "pullStartedAt": "2024-09-17T22:15:33Z",
+          "bestPercent": 0,
+          "isDefeated": true
+        },
+        {
+          "id": 1469929,
+          "slug": "sikran",
+          "numPulls": 1,
+          "pullStartedAt": "2024-09-17T22:31:59Z",
+          "bestPercent": 0,
+          "isDefeated": true
+        },
+        {
+          "id": 1469921,
+          "slug": "rashanan",
+          "numPulls": 1,
+          "pullStartedAt": "2024-09-17T22:46:32Z",
+          "bestPercent": 0,
+          "isDefeated": true
+        },
+        {
+          "id": 1470035,
+          "slug": "broodtwister-ovinax",
+          "numPulls": 117,
+          "pullStartedAt": "2024-09-20T03:32:02Z",
+          "bestPercent": 0,
+          "isDefeated": true
+        },
+        {
+          "id": 1470016,
+          "slug": "nexus-princess-kyveza",
+          "numPulls": 288,
+          "pullStartedAt": "2024-09-22T21:38:46Z",
+          "bestPercent": 0,
+          "isDefeated": true
+        },
+        {
+          "id": 1819144,
+          "slug": "the-silken-court",
+          "numPulls": 171,
+          "pullStartedAt": "2024-09-24T06:59:21Z",
+          "bestPercent": 0,
+          "isDefeated": true
+        },
+        {
+          "id": 2002325,
+          "slug": "queen-ansurek",
+          "numPulls": 404,
+          "pullStartedAt": "2024-09-29T06:52:34Z",
+          "bestPercent": 0,
+          "isDefeated": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,1 +1,38 @@
-{"bossRankings":[{"rank":1,"regionRank":1,"guild":{"id":1,"name":"Liquid"}}]}
+{
+  "bossRankings": [
+    {
+      "rank": 1,
+      "regionRank": 1,
+      "guild": {
+        "id": 1712677,
+        "name": "Liquid",
+        "faction": "horde",
+        "realm": {
+          "id": 369,
+          "connectedRealmId": 207,
+          "name": "Illidan",
+          "altName": null,
+          "slug": "illidan",
+          "altSlug": "illidan",
+          "locale": "en_US",
+          "isConnected": false
+        },
+        "region": {
+          "name": "United States & Oceania",
+          "slug": "us",
+          "short_name": "US"
+        },
+        "path": "/guilds/us/illidan/Liquid",
+        "logo": "https://cdn.raiderio.net/images/rwf/manaforge-omega/liquid/guildlogo.png",
+        "color": "#ffffff"
+      },
+      "encountersDefeated": [
+        {
+          "slug": "queen-ansurek",
+          "lastDefeated": "2024-09-29T07:02:27.000Z",
+          "firstDefeated": "2024-09-29T07:02:27.000Z"
+        }
+      ]
+    }
+  ]
+}
