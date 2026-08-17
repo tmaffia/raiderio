@@ -12,12 +12,22 @@
     {
       "character": {
         "name": "Drbananaphd",
-        "class": {"slug": "priest"},
-        "spec": {"slug": "holy"},
-        "talentLoadout": {"loadoutSpecId": 257, "loadoutText": "ABC"},
-        "realm": {"slug": "illidan"},
-        "region": {"slug": "us"},
-        "itemLevelEquipped": 400.2
+        "class": {
+          "slug": "monk"
+        },
+        "spec": {
+          "slug": "windwalker"
+        },
+        "talentLoadout": {
+          "loadoutText": "B0QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAESkkEtISEAAAAQikkAIJJJJpIpEiQASSSSaJBOAAA"
+        },
+        "realm": {
+          "slug": "illidan"
+        },
+        "region": {
+          "slug": "us"
+        },
+        "itemLevelEquipped": 401.8
       }
     }
   ]

@@ -1,1 +1,307 @@
-{"name":"Highervalue","gear":{"item_level_equipped":636},"talentLoadout":{"loadout_spec_id":71,"loadout_text":"CgEAAA"}}
+{
+  "name": "Highervalue",
+  "race": "Dwarf",
+  "class": "Warrior",
+  "active_spec_name": "Fury",
+  "active_spec_role": "DPS",
+  "gender": "male",
+  "faction": "alliance",
+  "achievement_points": 27870,
+  "thumbnail_url": "https://render.worldofwarcraft.com/us/character/illidan/142/226602894-avatar.jpg?alt=/wow/static/images/2d/avatar/3-0.jpg",
+  "region": "us",
+  "realm": "Illidan",
+  "last_crawled_at": "2026-08-16T20:14:52.000Z",
+  "profile_url": "https://raider.io/characters/us/illidan/Highervalue",
+  "profile_banner": "alliancebanner1",
+  "gear": {
+    "updated_at": "2026-08-14T18:35:59.318Z",
+    "item_level_equipped": 292,
+    "item_level_total": 0,
+    "items": {
+      "head": {
+        "item_id": 249952,
+        "item_level": 289,
+        "icon": "inv_helm_plate_raidwarriormidnight_d_01",
+        "name": "Night Ender's Tusks",
+        "item_quality": 4,
+        "is_legendary": false,
+        "gems": [
+          240910
+        ],
+        "bonuses": [
+          6652,
+          13440,
+          13338,
+          13575,
+          12806,
+          13534
+        ]
+      },
+      "neck": {
+        "item_id": 50228,
+        "item_level": 289,
+        "icon": "inv_jewelry_necklace_22",
+        "name": "Barbed Ymirheim Choker",
+        "item_quality": 4,
+        "is_legendary": false,
+        "gems": [
+          240908
+        ],
+        "bonuses": [
+          13440,
+          6652,
+          13668,
+          12699,
+          12806
+        ]
+      },
+      "shoulder": {
+        "item_id": 249950,
+        "item_level": 289,
+        "icon": "inv_shoulder_plate_raidwarriormidnight_d_01",
+        "name": "Night Ender's Pauldrons",
+        "item_quality": 4,
+        "is_legendary": false,
+        "gems": [],
+        "bonuses": [
+          6652,
+          13440,
+          13340,
+          13574,
+          12806
+        ]
+      },
+      "back": {
+        "item_id": 239656,
+        "item_level": 285,
+        "icon": "inv_cape_cloth_questbloodelf_b_01",
+        "name": "Adherent's Silken Shroud",
+        "item_quality": 4,
+        "is_legendary": false,
+        "gems": [],
+        "bonuses": [
+          12214,
+          13667,
+          12497,
+          12066,
+          8960,
+          12384,
+          8790,
+          13622
+        ]
+      },
+      "chest": {
+        "item_id": 249955,
+        "item_level": 298,
+        "icon": "inv_chest_plate_raidwarriormidnight_d_01",
+        "name": "Night Ender's Breastplate",
+        "item_quality": 4,
+        "is_legendary": false,
+        "gems": [],
+        "bonuses": [
+          6652,
+          13335,
+          13786,
+          13336,
+          13575,
+          3183
+        ]
+      },
+      "waist": {
+        "item_id": 249949,
+        "item_level": 298,
+        "icon": "inv_belt_plate_raidwarriormidnight_d_01",
+        "name": "Night Ender's Girdle",
+        "item_quality": 4,
+        "is_legendary": false,
+        "gems": [
+          240908
+        ],
+        "bonuses": [
+          6652,
+          13335,
+          13786,
+          3183,
+          13534
+        ]
+      },
+      "shirt": {
+        "item_id": 85510,
+        "item_level": 1,
+        "icon": "inv_shirt03_plain",
+        "name": "Officer's Shirt",
+        "item_quality": 2,
+        "is_legendary": false,
+        "gems": [],
+        "bonuses": []
+      },
+      "wrist": {
+        "item_id": 237834,
+        "item_level": 285,
+        "icon": "inv_plate_questbloodelf_b_01_bracer",
+        "name": "Spellbreaker's Bracers",
+        "item_quality": 4,
+        "is_legendary": false,
+        "gems": [
+          240910
+        ],
+        "bonuses": [
+          12214,
+          13667,
+          12497,
+          12066,
+          8960,
+          12384,
+          8790,
+          13622,
+          12666
+        ]
+      },
+      "hands": {
+        "item_id": 249953,
+        "item_level": 289,
+        "icon": "inv_glove_plate_raidwarriormidnight_d_01",
+        "name": "Night Ender's Fists",
+        "item_quality": 4,
+        "is_legendary": false,
+        "gems": [],
+        "bonuses": [
+          13335,
+          13337,
+          6652,
+          13574,
+          12806
+        ]
+      },
+      "legs": {
+        "item_id": 249951,
+        "item_level": 289,
+        "icon": "inv_pant_plate_raidwarriormidnight_d_01",
+        "name": "Night Ender's Chausses",
+        "item_quality": 4,
+        "is_legendary": false,
+        "gems": [],
+        "bonuses": [
+          6652,
+          13440,
+          13339,
+          13575,
+          12806
+        ]
+      },
+      "feet": {
+        "item_id": 249954,
+        "item_level": 289,
+        "icon": "inv_boot_plate_raidwarriormidnight_d_01",
+        "name": "Night Ender's Greatboots",
+        "item_quality": 4,
+        "is_legendary": false,
+        "gems": [],
+        "bonuses": [
+          6652,
+          13335,
+          12806
+        ]
+      },
+      "finger1": {
+        "item_id": 268290,
+        "item_level": 298,
+        "icon": "inv_12_jewelry_rutaani_ring_blue",
+        "name": "Sporecaller's Blooming Loop",
+        "item_quality": 4,
+        "is_legendary": false,
+        "gems": [
+          240908
+        ],
+        "bonuses": [
+          6652,
+          13668,
+          13335,
+          13786
+        ]
+      },
+      "finger2": {
+        "item_id": 251217,
+        "item_level": 289,
+        "icon": "inv_12_trinket_devouring_host_currency1_bronze",
+        "name": "Occlusion of Void",
+        "item_quality": 4,
+        "is_legendary": false,
+        "gems": [
+          240983
+        ],
+        "bonuses": [
+          13440,
+          6652,
+          13668,
+          12699,
+          12806
+        ]
+      },
+      "trinket1": {
+        "item_id": 249342,
+        "item_level": 298,
+        "icon": "inv_12_trinket_raid_voidspire_strdps_hearthofancienthunger",
+        "name": "Heart of Ancient Hunger",
+        "item_quality": 4,
+        "is_legendary": false,
+        "gems": [],
+        "bonuses": [
+          6652,
+          13335,
+          13654
+        ]
+      },
+      "trinket2": {
+        "item_id": 249343,
+        "item_level": 298,
+        "icon": "inv_12_trinket_raid_dreamrift_gazeofthealnseer",
+        "name": "Gaze of the Alnseer",
+        "item_quality": 4,
+        "is_legendary": false,
+        "gems": [],
+        "bonuses": [
+          6652,
+          13335,
+          13654
+        ]
+      },
+      "mainhand": {
+        "item_id": 49802,
+        "item_level": 298,
+        "icon": "inv_mace_83",
+        "name": "Garfrost's Two-Ton Hammer",
+        "item_quality": 4,
+        "is_legendary": false,
+        "gems": [],
+        "bonuses": [
+          13440,
+          6652,
+          12701,
+          13654
+        ]
+      },
+      "offhand": {
+        "item_id": 237839,
+        "item_level": 295,
+        "icon": "inv_sword_1h_questbloodelf_b_01",
+        "name": "Spellbreaker's Blade",
+        "item_quality": 4,
+        "is_legendary": false,
+        "gems": [],
+        "bonuses": [
+          12214,
+          13655,
+          12497,
+          12066,
+          8795,
+          13622
+        ]
+      }
+    }
+  },
+  "talentLoadout": {
+    "loadout_spec_id": 72,
+    "loadout_text": "CgEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgGDjZMz2yMzMjZmxMzMzMjZWmZmZmxsYmZGAAIMwGssY0YGQmFMjFAzgBAMzAwwiZAGD"
+  }
+}

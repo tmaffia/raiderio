@@ -1,1 +1,35 @@
-{"progression":[{"progress":1,"totalGuilds":249,"guilds":[{"defeatedAt":"2024-11-23T08:00:07.000Z","guild":{"name":"No Fun"}}]}]}
+{
+  "progression": [
+    {
+      "progress": 1,
+      "totalGuilds": 249,
+      "guilds": [
+        {
+          "defeatedAt": "2024-11-23T08:00:07.000Z",
+          "guild": {
+            "id": 192390,
+            "name": "No Fun",
+            "faction": "alliance",
+            "realm": {
+              "id": 419,
+              "connectedRealmId": 224,
+              "name": "Proudmoore",
+              "altName": null,
+              "slug": "proudmoore",
+              "altSlug": "proudmoore",
+              "locale": "en_US",
+              "isConnected": false
+            },
+            "region": {
+              "name": "United States & Oceania",
+              "slug": "us",
+              "short_name": "US"
+            },
+            "path": "/guilds/us/proudmoore/No%20Fun",
+            "logo": "https://cdn.raiderio.net/images/site/alliance_icon4.png"
+          }
+        }
+      ]
+    }
+  ]
+}

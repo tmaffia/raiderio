@@ -1,1 +1,16 @@
-{"name":"Highervalue","class":"Warrior","realm":"Illidan","region":"us"}
+{
+  "name": "Highervalue",
+  "race": "Dwarf",
+  "class": "Warrior",
+  "active_spec_name": "Fury",
+  "active_spec_role": "DPS",
+  "gender": "male",
+  "faction": "alliance",
+  "achievement_points": 27870,
+  "thumbnail_url": "https://render.worldofwarcraft.com/us/character/illidan/142/226602894-avatar.jpg?alt=/wow/static/images/2d/avatar/3-0.jpg",
+  "region": "us",
+  "realm": "Illidan",
+  "last_crawled_at": "2026-08-16T20:14:52.000Z",
+  "profile_url": "https://raider.io/characters/us/illidan/Highervalue",
+  "profile_banner": "alliancebanner1"
+}

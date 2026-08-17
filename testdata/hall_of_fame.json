@@ -1,1 +1,48 @@
-{"hallOfFame":{"bossKills":[{"boss":"ulgrax-the-devourer","defeatedBy":{"totalCount":1,"guilds":[{"guild":{"name":"Melee Mechanics"},"defeatedAt":"2024-09-17T19:12:04.000Z"}]}}]}}
+{
+  "hallOfFame": {
+    "bossKills": [
+      {
+        "boss": "ulgrax-the-devourer",
+        "bossSummary": {
+          "encounterId": 197090,
+          "name": "Ulgrax the Devourer",
+          "slug": "ulgrax-the-devourer",
+          "ordinal": 0,
+          "wingId": 0,
+          "iconUrl": "/images/wow/icons/large/inv_achievement_raidnerubian_nerubianhulk.jpg"
+        },
+        "defeatedBy": {
+          "totalCount": 3152,
+          "guilds": [
+            {
+              "guild": {
+                "id": 558946,
+                "name": "Melee Mechanics",
+                "faction": "horde",
+                "realm": {
+                  "id": 369,
+                  "connectedRealmId": 207,
+                  "name": "Illidan",
+                  "altName": null,
+                  "slug": "illidan",
+                  "altSlug": "illidan",
+                  "locale": "en_US",
+                  "isConnected": false
+                },
+                "region": {
+                  "name": "United States & Oceania",
+                  "slug": "us",
+                  "short_name": "US"
+                },
+                "path": "/guilds/us/illidan/Melee%20Mechanics",
+                "logo": "https://u-wowretail.raiderio.net/276d/2025/03/04/rIijCPvCoKhiJ9lmbSxe1sJkvi/image.png",
+                "color": "#c48709"
+              },
+              "defeatedAt": "2024-09-17T19:12:04.000Z"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -3,11 +3,126 @@
   "faction": "horde",
   "region": "us",
   "realm": "Illidan",
-  "members": [{"rank": 0, "character": {"name": "Tyghon", "class": "Mage"}}],
+  "last_crawled_at": "2026-08-10T09:08:36.000Z",
+  "profile_url": "https://raider.io/guilds/us/illidan/Warpath",
+  "members": [
+    {
+      "rank": 7,
+      "character": {
+        "name": "Tyghon",
+        "race": "Blood Elf",
+        "class": "Mage",
+        "active_spec_name": "Frost",
+        "active_spec_role": "DPS",
+        "gender": "male",
+        "faction": "horde",
+        "achievement_points": 16415,
+        "region": "us",
+        "realm": "Illidan",
+        "last_crawled_at": "2026-07-18T00:24:27.000Z",
+        "profile_url": "https://raider.io/characters/us/illidan/Tyghon",
+        "profile_banner": "hordebanner1"
+      }
+    }
+  ],
   "raid_progression": {
-    "tier-mn-1": {"summary": "9/9 M", "total_bosses": 9, "mythic_bosses_killed": 9}
+    "tier-mn-1": {
+      "summary": "9/9 M",
+      "total_bosses": 9,
+      "normal_bosses_killed": 9,
+      "heroic_bosses_killed": 9,
+      "mythic_bosses_killed": 9
+    },
+    "sporefall": {
+      "summary": "1/1 M",
+      "total_bosses": 1,
+      "normal_bosses_killed": 0,
+      "heroic_bosses_killed": 1,
+      "mythic_bosses_killed": 1
+    },
+    "the-tidebound-grotto": {
+      "summary": "0/1 N",
+      "total_bosses": 1,
+      "normal_bosses_killed": 0,
+      "heroic_bosses_killed": 0,
+      "mythic_bosses_killed": 0
+    },
+    "the-venomous-abyss": {
+      "summary": "0/8 N",
+      "total_bosses": 8,
+      "normal_bosses_killed": 0,
+      "heroic_bosses_killed": 0,
+      "mythic_bosses_killed": 0
+    }
   },
   "raid_rankings": {
-    "tier-mn-1": {"mythic": {"world": 96, "region": 29, "realm": 8}}
+    "tier-mn-1": {
+      "normal": {
+        "world": 11681,
+        "region": 5159,
+        "realm": 280
+      },
+      "heroic": {
+        "world": 1394,
+        "region": 464,
+        "realm": 75
+      },
+      "mythic": {
+        "world": 96,
+        "region": 29,
+        "realm": 8
+      }
+    },
+    "sporefall": {
+      "normal": {
+        "world": 0,
+        "region": 0,
+        "realm": 0
+      },
+      "heroic": {
+        "world": 5411,
+        "region": 3001,
+        "realm": 173
+      },
+      "mythic": {
+        "world": 2041,
+        "region": 926,
+        "realm": 99
+      }
+    },
+    "the-tidebound-grotto": {
+      "normal": {
+        "world": 0,
+        "region": 0,
+        "realm": 0
+      },
+      "heroic": {
+        "world": 0,
+        "region": 0,
+        "realm": 0
+      },
+      "mythic": {
+        "world": 0,
+        "region": 0,
+        "realm": 0
+      }
+    },
+    "the-venomous-abyss": {
+      "normal": {
+        "world": 0,
+        "region": 0,
+        "realm": 0
+      },
+      "heroic": {
+        "world": 0,
+        "region": 0,
+        "realm": 0
+      },
+      "mythic": {
+        "world": 0,
+        "region": 0,
+        "realm": 0
+      }
+    }
   }
 }
