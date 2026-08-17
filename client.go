@@ -34,7 +34,8 @@ func NewClient(accessKey ...string) *Client {
 // It returns an error if the API returns a non-200 status code, or if the
 // response body cannot be read or mapped to the Character struct
 func (c *Client) GetCharacter(ctx context.Context, cq *CharacterQuery) (*Character, error) {
-	if err := validateCharacterQuery(cq); err != nil {
+	fields, err := validateCharacterQuery(cq)
+	if err != nil {
 		return nil, err
 	}
 
@@ -43,8 +44,8 @@ func (c *Client) GetCharacter(ctx context.Context, cq *CharacterQuery) (*Charact
 		"realm":  {cq.Realm},
 		"name":   {cq.Name},
 	}
-	if len(cq.fields) > 0 {
-		params.Set("fields", strings.Join(cq.fields, ","))
+	if len(fields) > 0 {
+		params.Set("fields", strings.Join(fields, ","))
 	}
 
 	return getJSON[Character](c, ctx, "/characters/profile", params)
@@ -54,7 +55,8 @@ func (c *Client) GetCharacter(ctx context.Context, cq *CharacterQuery) (*Charact
 // It returns an error if the API returns a non-200 status code, or if the
 // response body cannot be read or mapped to the Guild struct
 func (c *Client) GetGuild(ctx context.Context, gq *GuildQuery) (*Guild, error) {
-	if err := createGuildQuery(gq); err != nil {
+	fields, err := createGuildQuery(gq)
+	if err != nil {
 		return nil, err
 	}
 
@@ -63,8 +65,8 @@ func (c *Client) GetGuild(ctx context.Context, gq *GuildQuery) (*Guild, error) {
 		"realm":  {gq.Realm},
 		"name":   {gq.Name},
 	}
-	if len(gq.fields) > 0 {
-		params.Set("fields", strings.Join(gq.fields, ","))
+	if len(fields) > 0 {
+		params.Set("fields", strings.Join(fields, ","))
 	}
 
 	return getJSON[Guild](c, ctx, "/guilds/profile", params)

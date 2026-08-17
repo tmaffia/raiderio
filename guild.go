@@ -12,7 +12,6 @@ type GuildQuery struct {
 	Members         bool
 	RaidProgression bool
 	RaidRankings    bool
-	fields          []string
 }
 
 // Guild is a struct that represents the response from
@@ -39,29 +38,34 @@ type Member struct {
 // createGuildQuery creates and validates a GuildQuery struct
 // It returns an error if any of the required parameters are empty
 // or if the fields are invalid
-func createGuildQuery(gq *GuildQuery) error {
+func createGuildQuery(gq *GuildQuery) ([]string, error) {
+	if gq == nil {
+		return nil, ErrInvalidQuery
+	}
+
 	if gq.Region == "" {
-		return ErrInvalidRegion
+		return nil, ErrInvalidRegion
 	}
 
 	if gq.Realm == "" {
-		return ErrInvalidRealm
+		return nil, ErrInvalidRealm
 	}
 
 	if gq.Name == "" {
-		return ErrInvalidGuildName
+		return nil, ErrInvalidGuildName
 	}
 
+	var fields []string
 	if gq.Members {
-		gq.fields = append(gq.fields, "members")
+		fields = append(fields, "members")
 	}
 
 	if gq.RaidProgression {
-		gq.fields = append(gq.fields, "raid_progression")
+		fields = append(fields, "raid_progression")
 	}
 
 	if gq.RaidRankings {
-		gq.fields = append(gq.fields, "raid_rankings")
+		fields = append(fields, "raid_rankings")
 	}
-	return nil
+	return fields, nil
 }

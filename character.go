@@ -26,7 +26,6 @@ type CharacterQuery struct {
 	MythicPlusPreviousWeeklyHighestLevelRuns bool
 	RaidAchievementMeta                      []string
 	RaidAchievementCurve                     []string
-	fields                                   []string
 }
 
 // Character is a struct that represents the response from
@@ -223,64 +222,69 @@ type TalentLoadout struct {
 // validateCharacterQuery creates and validates a CharacterQuery struct
 // It returns an error if any of the required parameters are empty
 // or if the fields are invalid
-func validateCharacterQuery(cq *CharacterQuery) error {
+func validateCharacterQuery(cq *CharacterQuery) ([]string, error) {
+	if cq == nil {
+		return nil, ErrInvalidQuery
+	}
+
 	if cq.Region == "" {
-		return ErrInvalidRegion
+		return nil, ErrInvalidRegion
 	}
 
 	if cq.Realm == "" {
-		return ErrInvalidRealm
+		return nil, ErrInvalidRealm
 	}
 
 	if cq.Name == "" {
-		return ErrInvalidCharName
+		return nil, ErrInvalidCharName
 	}
 
+	var fields []string
 	if cq.TalentLoadout {
-		cq.fields = append(cq.fields, "talents")
+		fields = append(fields, "talents")
 	}
 	if cq.Gear {
-		cq.fields = append(cq.fields, "gear")
+		fields = append(fields, "gear")
 	}
 	if cq.Guild {
-		cq.fields = append(cq.fields, "guild")
+		fields = append(fields, "guild")
 	}
 	if cq.RaidProgression {
-		cq.fields = append(cq.fields, "raid_progression")
+		fields = append(fields, "raid_progression")
 	}
 	if len(cq.MythicPlusScoresBySeason) > 0 {
-		cq.fields = append(cq.fields, "mythic_plus_scores_by_season:"+strings.Join(cq.MythicPlusScoresBySeason, ":"))
+		fields = append(fields, "mythic_plus_scores_by_season:"+strings.Join(cq.MythicPlusScoresBySeason, ":"))
 	}
 	if cq.MythicPlusRanks {
-		cq.fields = append(cq.fields, "mythic_plus_ranks")
+		fields = append(fields, "mythic_plus_ranks")
 	}
 	if cq.PreviousMythicPlusRanks {
-		cq.fields = append(cq.fields, "previous_mythic_plus_ranks")
+		fields = append(fields, "previous_mythic_plus_ranks")
 	}
 	if cq.MythicPlusRecentRuns {
-		cq.fields = append(cq.fields, "mythic_plus_recent_runs")
+		fields = append(fields, "mythic_plus_recent_runs")
 	}
 	switch {
 	case cq.MythicPlusBestRunsAll:
-		cq.fields = append(cq.fields, "mythic_plus_best_runs:all")
+		fields = append(fields, "mythic_plus_best_runs:all")
 	case cq.MythicPlusBestRuns:
-		cq.fields = append(cq.fields, "mythic_plus_best_runs")
+		fields = append(fields, "mythic_plus_best_runs")
 	}
 	if cq.MythicPlusHighestLevelRuns {
-		cq.fields = append(cq.fields, "mythic_plus_highest_level_runs")
+		fields = append(fields, "mythic_plus_highest_level_runs")
 	}
 	if cq.MythicPlusWeeklyHighestLevelRuns {
-		cq.fields = append(cq.fields, "mythic_plus_weekly_highest_level_runs")
+		fields = append(fields, "mythic_plus_weekly_highest_level_runs")
 	}
 	if cq.MythicPlusPreviousWeeklyHighestLevelRuns {
-		cq.fields = append(cq.fields, "mythic_plus_previous_weekly_highest_level_runs")
+		fields = append(fields, "mythic_plus_previous_weekly_highest_level_runs")
 	}
 	if len(cq.RaidAchievementMeta) > 0 {
-		cq.fields = append(cq.fields, "raid_achievement_meta:"+strings.Join(cq.RaidAchievementMeta, ":"))
+		fields = append(fields, "raid_achievement_meta:"+strings.Join(cq.RaidAchievementMeta, ":"))
 	}
 	if len(cq.RaidAchievementCurve) > 0 {
-		cq.fields = append(cq.fields, "raid_achievement_curve:"+strings.Join(cq.RaidAchievementCurve, ":"))
+		fields = append(fields, "raid_achievement_curve:"+strings.Join(cq.RaidAchievementCurve, ":"))
 	}
 
-	return nil
+	return fields, nil
 }
