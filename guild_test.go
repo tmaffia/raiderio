@@ -52,7 +52,7 @@ func TestGetGuildRaidRankBySlug(t *testing.T) {
 			t.Fatalf("expected error: %v, got: %v", tc.expectedErrMsg, err.Error())
 		}
 
-		if err == nil && !(rank.Mythic.World > 0) {
+		if err == nil && rank.Mythic.World <= 0 {
 			t.Fatalf("mythic guild ranking for raid: %v, got: %d, expected > 0",
 				rank.RaidSlug, rank.Mythic.World)
 		}

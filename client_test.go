@@ -34,7 +34,7 @@ func setup() {
 		func() {
 			file, err := os.Open(filename)
 			if err == nil {
-				defer file.Close()
+				defer func() { _ = file.Close() }()
 				scanner := bufio.NewScanner(file)
 				for scanner.Scan() {
 					line := scanner.Text()
@@ -42,7 +42,7 @@ func setup() {
 					if len(parts) == 2 {
 						key := strings.TrimSpace(parts[0])
 						value := strings.TrimSpace(parts[1])
-						os.Setenv(key, value)
+						_ = os.Setenv(key, value)
 					}
 				}
 			}
@@ -195,7 +195,7 @@ func TestGetCharacterWGear(t *testing.T) {
 			t.Fatalf("character name expected: %v, got: %v. item level equipped: %d", tc.expectedName, profile.Name, profile.Gear.ItemLevelEquipped)
 		}
 
-		if err == nil && !(profile.Gear.ItemLevelEquipped > 0) {
+		if err == nil && profile.Gear.ItemLevelEquipped <= 0 {
 			t.Fatalf("character item level equipped: %d, expected > 0", profile.Gear.ItemLevelEquipped)
 		}
 	}
@@ -279,7 +279,7 @@ func TestGetGuildWMembers(t *testing.T) {
 			t.Fatalf("Error getting guild: %v", err)
 		}
 
-		if !(len(profile.Members) > 0) {
+		if len(profile.Members) == 0 {
 			t.Fatalf("Error getting guild members")
 		}
 	}
