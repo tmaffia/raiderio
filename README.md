@@ -182,9 +182,9 @@ func main() {
 	client := raiderio.NewClient()
 
 	profile, err := client.GetCharacter(context.Background(), &raiderio.CharacterQuery{
-		Region:                    raiderio.US,
-		Realm:                     "illidan",
-		Name:                      "thehighvalue",
+		Region:                   raiderio.US,
+		Realm:                    "illidan",
+		Name:                     "thehighvalue",
 		MythicPlusScoresBySeason: []string{"current"},
 	})
 	if err != nil {
