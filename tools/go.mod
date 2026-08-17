@@ -1,8 +1,8 @@
 module github.com/tmaffia/raiderio/tools
 
-go 1.25.4
+go 1.24
 
-require github.com/golangci/golangci-lint v1.64.8
+require github.com/golangci/golangci-lint v1.64.8 // indirect
 
 require (
 	4d63.com/gocheckcompilerdirectives v1.3.0 // indirect
@@ -190,3 +190,5 @@ require (
 	mvdan.cc/gofumpt v0.7.0 // indirect
 	mvdan.cc/unparam v0.0.0-20240528143540-8a5130ca722f // indirect
 )
+
+tool github.com/golangci/golangci-lint/cmd/golangci-lint

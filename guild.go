@@ -1,7 +1,6 @@
 package raiderio
 
 import (
-	"encoding/json"
 	"errors"
 
 	"github.com/tmaffia/raiderio/regions"
@@ -30,7 +29,7 @@ type Guild struct {
 	LastCrawledAt   string                      `json:"last_crawled_at"`
 	ProfileUrl      string                      `json:"profile_url"`
 	Members         []Member                    `json:"members"`
-	RaidProgression GuildRaidProgression        `json:"raid_progression"`
+	RaidProgression map[string]RaidProgression  `json:"raid_progression"`
 	RaidRankings    map[string]GuildRaidRanking `json:"raid_rankings"`
 }
 
@@ -39,17 +38,6 @@ type Guild struct {
 type Member struct {
 	Rank      int       `json:"rank"`
 	Character Character `json:"character"`
-}
-
-// RaidProgression is a struct that contains the raid progression of a guild
-// in a guild profile response
-// Currently supports Dragonflight raids
-type GuildRaidProgression struct {
-	Amirdrassil          RaidProgression `json:"amirdrassil-amirdrassil-the-dreams-hope"`
-	Aberrus              RaidProgression `json:"aberrus-the-shadowed-crucible"`
-	VaultOfTheIncarnates RaidProgression `json:"vault-of-the-incarnates"`
-	NerubarPalace        RaidProgression `json:"nerubar-palace"`
-	Undermine            RaidProgression `json:"liberation-of-undermine"`
 }
 
 // createGuildQuery creates and validates a GuildQuery struct
@@ -93,20 +81,4 @@ func (g *Guild) GetGuildRaidRankBySlug(slug string) (*GuildRaidRanking, error) {
 	}
 
 	return &gr, nil
-}
-
-func unmarshalGuild(body []byte) (*Guild, error) {
-	var profile Guild
-	err := json.Unmarshal(body, &profile)
-	if err != nil {
-		return nil, errors.New("error unmarshalling guild profile")
-	}
-
-	for k := range profile.RaidRankings {
-		if entry, ok := profile.RaidRankings[k]; ok {
-			entry.RaidSlug = k
-			profile.RaidRankings[k] = entry
-		}
-	}
-	return &profile, nil
 }

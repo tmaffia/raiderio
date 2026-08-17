@@ -1,11 +1,23 @@
 package raiderio_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/tmaffia/raiderio"
 	"github.com/tmaffia/raiderio/regions"
 )
+
+func TestGuildRaidProgressionJSON(t *testing.T) {
+	var g raiderio.Guild
+	err := json.Unmarshal([]byte(`{"raid_progression":{"nerubar-palace":{"summary":"8/8 M"},"manaforge-omega":{"summary":"8/8 H"}}}`), &g)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if g.RaidProgression["nerubar-palace"].Summary != "8/8 M" {
+		t.Fatalf("got %#v", g.RaidProgression)
+	}
+}
 
 func TestGetGuildRaidRankBySlug(t *testing.T) {
 	testCases := []struct {
@@ -16,14 +28,16 @@ func TestGetGuildRaidRankBySlug(t *testing.T) {
 		raidSlug            string
 		expectedErrMsg      string
 	}{
-		{region: regions.US, realm: "illidan", name: "warpath", raidSlug: "nerubar-palace", includeRandRankings: true},
+		{region: regions.US, realm: "illidan", name: "warpath", raidSlug: "tier-mn-1", includeRandRankings: true},
 		{region: regions.US, realm: "illidan", name: "warpath", raidSlug: "invalid raid slug", expectedErrMsg: "invalid raid", includeRandRankings: true},
-		{region: regions.US, realm: "illidan", name: "warpath", raidSlug: "nerubar-palace",
+		{region: regions.US, realm: "illidan", name: "warpath", raidSlug: "tier-mn-1",
 			expectedErrMsg: "guild raid rankings field missing from api response", includeRandRankings: false},
 	}
 
 	for _, tc := range testCases {
-		profile, err := c.GetGuild(defaultCtx, &raiderio.GuildQuery{
+		ctx, cancel := ctx()
+		defer cancel()
+		profile, err := c.GetGuild(ctx, &raiderio.GuildQuery{
 			Region:       tc.region,
 			Realm:        tc.realm,
 			Name:         tc.name,

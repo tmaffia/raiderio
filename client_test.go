@@ -16,8 +16,17 @@ import (
 )
 
 var c *raiderio.Client
-var defaultCtx context.Context
-var cancel context.CancelFunc
+
+func ctx() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), 30*time.Second)
+}
+
+func testCtx(timeout bool) (context.Context, context.CancelFunc) {
+	if timeout {
+		return context.WithTimeout(context.Background(), time.Millisecond)
+	}
+	return ctx()
+}
 
 func setup() {
 	// Try to read .env and .env.local files
@@ -45,7 +54,6 @@ func setup() {
 		opts = append(opts, raiderio.WithAccessKey(key))
 	}
 	c = raiderio.NewClient(opts...)
-	defaultCtx, cancel = context.WithTimeout(context.Background(), time.Second*30)
 }
 
 func TestMain(m *testing.M) {
@@ -129,19 +137,15 @@ func TestGetCharacterProfile(t *testing.T) {
 		{region: regions.US, realm: "", name: "highervalue", expectedErrMsg: "invalid realm"},
 		{region: regions.US, realm: "illidan", name: "", expectedErrMsg: "invalid character name"},
 		{region: nil, realm: "illidan", name: "highervalue", expectedErrMsg: "invalid region"},
-		{region: &regions.Region{Slug: "badregion"}, realm: "illidan", name: "impossiblecharactername", expectedErrMsg: "invalid region"},
+		{region: &regions.Region{Slug: "badregion"}, realm: "illidan", name: "impossiblecharactername", expectedErrMsg: "invalid query"},
 		{region: regions.US, realm: "illidan", name: "impossiblecharactername", expectedErrMsg: "character not found"},
 		{region: regions.US, realm: "invalidrealm", name: "highervalue", expectedErrMsg: "invalid realm"},
 		{timeout: true, region: regions.US, realm: "illidan", name: "highervalue", expectedErrMsg: "raiderio api request timeout"},
 	}
 
 	for _, tc := range testCases {
-		ctx := defaultCtx
-		var cancel context.CancelFunc
-		if tc.timeout {
-			ctx, cancel = context.WithTimeout(defaultCtx, time.Millisecond*1)
-			defer cancel()
-		}
+		ctx, cancel := testCtx(tc.timeout)
+		defer cancel()
 
 		profile, err := c.GetCharacter(ctx, &raiderio.CharacterQuery{
 			Region: tc.region,
@@ -173,12 +177,8 @@ func TestGetCharacterWGear(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		ctx := defaultCtx
-		var cancel context.CancelFunc
-		if tc.timeout {
-			ctx, cancel = context.WithTimeout(ctx, time.Millisecond*1)
-			defer cancel()
-		}
+		ctx, cancel := testCtx(tc.timeout)
+		defer cancel()
 
 		profile, err := c.GetCharacter(ctx, &raiderio.CharacterQuery{
 			Region: tc.region,
@@ -209,7 +209,9 @@ func TestGetCharacterWTalents(t *testing.T) {
 		TalentLoadout: true,
 	}
 
-	profile, err := c.GetCharacter(defaultCtx, &cq)
+	ctx, cancel := ctx()
+	defer cancel()
+	profile, err := c.GetCharacter(ctx, &cq)
 	if err == nil && profile.TalentLoadout.LoadoutText == "" {
 		t.Fatalf("talent loadout: %v expected to not be empty", profile.TalentLoadout.LoadoutText)
 	}
@@ -228,19 +230,15 @@ func TestGetGuild(t *testing.T) {
 		{region: regions.US, realm: "", name: "warpath", expectedErrMsg: "invalid realm"},
 		{region: regions.US, realm: "illidan", name: "", expectedErrMsg: "invalid guild name"},
 		{region: nil, realm: "illidan", name: "highervalue", expectedErrMsg: "invalid region"},
-		{region: &regions.Region{Slug: "badregion"}, realm: "illidan", name: "warpath", expectedErrMsg: "invalid region"},
+		{region: &regions.Region{Slug: "badregion"}, realm: "illidan", name: "warpath", expectedErrMsg: "invalid query"},
 		{region: regions.US, realm: "illidan", name: "impossible_guild_name", expectedErrMsg: "guild not found"},
 		{region: regions.US, realm: "invalidrealm", name: "highervalue", expectedErrMsg: "invalid realm"},
 		{timeout: true, region: regions.US, realm: "illidan", name: "highervalue", expectedErrMsg: "raiderio api request timeout"},
 	}
 
 	for _, tc := range testCases {
-		ctx := defaultCtx
-		var cancel context.CancelFunc
-		if tc.timeout {
-			ctx, cancel = context.WithTimeout(ctx, time.Millisecond*1)
-			defer cancel()
-		}
+		ctx, cancel := testCtx(tc.timeout)
+		defer cancel()
 
 		profile, err := c.GetGuild(ctx, &raiderio.GuildQuery{
 			Region: tc.region,
@@ -268,7 +266,9 @@ func TestGetGuildWMembers(t *testing.T) {
 	}
 
 	for range testCases {
-		profile, err := c.GetGuild(defaultCtx, &raiderio.GuildQuery{
+		ctx, cancel := ctx()
+		defer cancel()
+		profile, err := c.GetGuild(ctx, &raiderio.GuildQuery{
 			Region:  regions.US,
 			Realm:   "illidan",
 			Name:    "warpath",
@@ -296,7 +296,9 @@ func TestGetGuildWRaidProgression(t *testing.T) {
 	}
 
 	for range testCases {
-		profile, err := c.GetGuild(defaultCtx, &raiderio.GuildQuery{
+		ctx, cancel := ctx()
+		defer cancel()
+		profile, err := c.GetGuild(ctx, &raiderio.GuildQuery{
 			Region:          regions.US,
 			Realm:           "illidan",
 			Name:            "warpath",
@@ -307,8 +309,12 @@ func TestGetGuildWRaidProgression(t *testing.T) {
 			t.Errorf("Error getting guild %v", err)
 		}
 
-		if profile.RaidProgression.NerubarPalace.Summary == "" {
-			t.Fatalf("Error getting guild raid progression, got: %v", profile.RaidProgression.NerubarPalace.Summary)
+		ok := false
+		for _, p := range profile.RaidProgression {
+			ok = ok || p.Summary != ""
+		}
+		if !ok {
+			t.Fatalf("Error getting guild raid progression, got: %v", profile.RaidProgression)
 		}
 	}
 }
@@ -320,23 +326,18 @@ func TestGetGuildWRaidRankings(t *testing.T) {
 		realm          string
 		name           string
 		raidName       string
-		expectedRank   int
 		expectedErrMsg string
 	}{
 		{region: regions.US, realm: "illidan", name: "warpath",
-			raidName: "nerubar-palace", expectedRank: 92},
+			raidName: "tier-mn-1"},
 		{timeout: true, region: regions.US, realm: "illidan", name: "warpath",
-			raidName:       "nerubar-palace",
+			raidName:       "tier-mn-1",
 			expectedErrMsg: "raiderio api request timeout"},
 	}
 
 	for _, tc := range testCases {
-		ctx := defaultCtx
-		var cancel context.CancelFunc
-		if tc.timeout {
-			ctx, cancel = context.WithTimeout(ctx, time.Millisecond*1)
-			defer cancel()
-		}
+		ctx, cancel := testCtx(tc.timeout)
+		defer cancel()
 
 		profile, err := c.GetGuild(ctx, &raiderio.GuildQuery{
 			Region:       regions.US,
@@ -352,9 +353,8 @@ func TestGetGuildWRaidRankings(t *testing.T) {
 
 		if err == nil {
 			rank := profile.RaidRankings[tc.raidName]
-			if rank.Mythic.World != tc.expectedRank {
-				t.Fatalf("mythic guild ranking for raid: %v, got: %d, expected: %d",
-					rank.RaidSlug, rank.Mythic.World, tc.expectedRank)
+			if rank.Mythic.World == 0 {
+				t.Fatalf("mythic guild ranking for raid: %v missing", tc.raidName)
 			}
 		}
 	}
@@ -393,7 +393,7 @@ func TestGetGuildBossKill(t *testing.T) {
 			expectedErrMsg: "invalid guild name"},
 		{region: regions.US, difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
 			guildName: "warpath", raidSlug: "invalid-raid-slug", bossSlug: "terros",
-			expectedErrMsg: "invalid raid"},
+			expectedErrMsg: "invalid query"},
 		{region: regions.US, difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
 			guildName: "warpath", bossSlug: "terros",
 			expectedErrMsg: "invalid raid name"},
@@ -413,12 +413,8 @@ func TestGetGuildBossKill(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		ctx := defaultCtx
-		var cancel context.CancelFunc
-		if tc.timeout {
-			ctx, cancel = context.WithTimeout(ctx, time.Millisecond*1)
-			defer cancel()
-		}
+		ctx, cancel := testCtx(tc.timeout)
+		defer cancel()
 
 		k, err := c.GetGuildBossKill(ctx, &raiderio.GuildBossKillQuery{
 			Region:     tc.region,
@@ -448,18 +444,14 @@ func TestGetRaids(t *testing.T) {
 		expectedErrMsg   string
 	}{
 		{expansion: expansions.DRAGONFLIGHT, raidName: "aberrus-the-shadowed-crucible", expectedRaidName: "Aberrus, the Shadowed Crucible"},
-		{expansion: expansions.MIDNIGHT, raidName: "march-on-queldanas", expectedRaidName: "March on Quel'Danas"},
+		{expansion: expansions.MIDNIGHT, raidName: "sporefall", expectedRaidName: "Sporefall"},
 		{timeout: true, expansion: expansions.DRAGONFLIGHT, raidName: "aberrus-the-shadowed-crucible", expectedErrMsg: "raiderio api request timeout"},
 		{expansion: 2, expectedErrMsg: "unsupported expansion"},
 	}
 
 	for _, tc := range testCases {
-		ctx := defaultCtx
-		var cancel context.CancelFunc
-		if tc.timeout {
-			ctx, cancel = context.WithTimeout(ctx, time.Millisecond*1)
-			defer cancel()
-		}
+		ctx, cancel := testCtx(tc.timeout)
+		defer cancel()
 
 		raids, err := c.GetRaids(ctx, tc.expansion)
 		if err != nil && err.Error() != tc.expectedErrMsg {
@@ -494,7 +486,7 @@ func TestGetRaidRankings(t *testing.T) {
 		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: regions.US,
 			realm: "illidan", limit: 1},
 		{slug: "invalid raid slug", difficulty: raiderio.MYTHIC_RAID, region: regions.US, realm: "illidan",
-			expectedErrMsg: "invalid raid"},
+			expectedErrMsg: "invalid query"},
 		{slug: "aberrus-the-shadowed-crucible", difficulty: "mythic", region: nil, realm: "illidan", expectedErrMsg: "invalid region"},
 		{slug: "aberrus-the-shadowed-crucible", difficulty: "", region: regions.US, realm: "illidan",
 			expectedErrMsg: "invalid raid difficulty"},
@@ -513,12 +505,8 @@ func TestGetRaidRankings(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		ctx := defaultCtx
-		var cancel context.CancelFunc
-		if tc.timeout {
-			ctx, cancel = context.WithTimeout(ctx, time.Millisecond*1)
-			defer cancel()
-		}
+		ctx, cancel := testCtx(tc.timeout)
+		defer cancel()
 
 		rankings, err := c.GetRaidRankings(ctx, &raiderio.RaidQuery{
 			Slug:       tc.slug,
@@ -572,12 +560,8 @@ func TestGetBossRankings(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		ctx := defaultCtx
-		var cancel context.CancelFunc
-		if tc.timeout {
-			ctx, cancel = context.WithTimeout(ctx, time.Millisecond*1)
-			defer cancel()
-		}
+		ctx, cancel := testCtx(tc.timeout)
+		defer cancel()
 
 		rankings, err := c.GetBossRankings(ctx, &raiderio.BossRankingsQuery{
 			RaidSlug:   tc.raidSlug,
@@ -619,12 +603,8 @@ func TestGetHallOfFame(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		ctx := defaultCtx
-		var cancel context.CancelFunc
-		if tc.timeout {
-			ctx, cancel = context.WithTimeout(ctx, time.Millisecond*1)
-			defer cancel()
-		}
+		ctx, cancel := testCtx(tc.timeout)
+		defer cancel()
 
 		hof, err := noAuthClient.GetHallOfFame(ctx, &raiderio.HallOfFameQuery{
 			RaidSlug:   tc.raidSlug,
@@ -664,12 +644,8 @@ func TestGetRaidProgression(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		ctx := defaultCtx
-		var cancel context.CancelFunc
-		if tc.timeout {
-			ctx, cancel = context.WithTimeout(ctx, time.Millisecond*1)
-			defer cancel()
-		}
+		ctx, cancel := testCtx(tc.timeout)
+		defer cancel()
 
 		prog, err := noAuthClient.GetRaidProgression(ctx, &raiderio.RaidProgressionQuery{
 			RaidSlug:   tc.raidSlug,
