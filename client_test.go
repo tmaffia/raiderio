@@ -96,6 +96,28 @@ func TestGetCharacter(t *testing.T) {
 	}
 }
 
+func TestGetCharacter_reuseQuery(t *testing.T) {
+	var fields []string
+	c := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+		fields = append(fields, r.URL.Query().Get("fields"))
+		w.Write(testdata(t, "character_fields.json"))
+	})
+
+	q := &CharacterQuery{
+		Region: US, Realm: "illidan", Name: "highervalue",
+		Gear: true, TalentLoadout: true,
+	}
+	if _, err := c.GetCharacter(context.Background(), q); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.GetCharacter(context.Background(), q); err != nil {
+		t.Fatal(err)
+	}
+	if len(fields) != 2 || fields[0] != "talents,gear" || fields[1] != "talents,gear" {
+		t.Fatalf("fields %q", fields)
+	}
+}
+
 func TestGetCharacter_optionalFields(t *testing.T) {
 	var fields string
 	c := testClient(t, func(w http.ResponseWriter, r *http.Request) {
@@ -179,6 +201,9 @@ func TestGetCharacter_validate(t *testing.T) {
 			t.Fatalf("%+v: got %v want %v", tc.q, err, tc.want)
 		}
 	}
+	if _, err := c.GetCharacter(context.Background(), nil); !errors.Is(err, ErrInvalidQuery) {
+		t.Fatalf("nil query: got %v want %v", err, ErrInvalidQuery)
+	}
 }
 
 func TestGetGuild(t *testing.T) {
@@ -216,6 +241,28 @@ func TestGetGuild(t *testing.T) {
 	}
 }
 
+func TestGetGuild_reuseQuery(t *testing.T) {
+	var fields []string
+	c := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+		fields = append(fields, r.URL.Query().Get("fields"))
+		w.Write(testdata(t, "guild.json"))
+	})
+
+	q := &GuildQuery{
+		Region: US, Realm: "illidan", Name: "warpath",
+		Members: true, RaidProgression: true, RaidRankings: true,
+	}
+	if _, err := c.GetGuild(context.Background(), q); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.GetGuild(context.Background(), q); err != nil {
+		t.Fatal(err)
+	}
+	if len(fields) != 2 || fields[0] != "members,raid_progression,raid_rankings" || fields[1] != fields[0] {
+		t.Fatalf("fields %q", fields)
+	}
+}
+
 func TestGetGuild_validate(t *testing.T) {
 	c := mustNotHit(t)
 	cases := []struct {
@@ -231,6 +278,9 @@ func TestGetGuild_validate(t *testing.T) {
 		if !errors.Is(err, tc.want) {
 			t.Fatalf("%+v: got %v want %v", tc.q, err, tc.want)
 		}
+	}
+	if _, err := c.GetGuild(context.Background(), nil); !errors.Is(err, ErrInvalidQuery) {
+		t.Fatalf("nil query: got %v want %v", err, ErrInvalidQuery)
 	}
 }
 
@@ -317,6 +367,9 @@ func TestGetRaidRankings_validate(t *testing.T) {
 			t.Fatalf("%+v: got %v want %v", tc.q, err, tc.want)
 		}
 	}
+	if _, err := c.GetRaidRankings(context.Background(), nil); !errors.Is(err, ErrInvalidQuery) {
+		t.Fatalf("nil query: got %v want %v", err, ErrInvalidQuery)
+	}
 }
 
 func TestGetGuildBossKill(t *testing.T) {
@@ -379,6 +432,9 @@ func TestGetGuildBossKill_validate(t *testing.T) {
 			t.Fatalf("%+v: got %v want %v", q, err, tc.want)
 		}
 	}
+	if _, err := c.GetGuildBossKill(context.Background(), nil); !errors.Is(err, ErrInvalidQuery) {
+		t.Fatalf("nil query: got %v want %v", err, ErrInvalidQuery)
+	}
 }
 
 func TestGetBossRankings(t *testing.T) {
@@ -429,6 +485,9 @@ func TestGetBossRankings_validate(t *testing.T) {
 		if !errors.Is(err, tc.want) {
 			t.Fatalf("%+v: got %v want %v", tc.q, err, tc.want)
 		}
+	}
+	if _, err := c.GetBossRankings(context.Background(), nil); !errors.Is(err, ErrInvalidQuery) {
+		t.Fatalf("nil query: got %v want %v", err, ErrInvalidQuery)
 	}
 }
 
@@ -495,5 +554,8 @@ func TestValidateRaidQuery(t *testing.T) {
 		if !errors.Is(err, tc.want) {
 			t.Fatalf("%+v: got %v want %v", tc.q, err, tc.want)
 		}
+	}
+	if _, err := c.GetHallOfFame(context.Background(), nil); !errors.Is(err, ErrInvalidQuery) {
+		t.Fatalf("nil query: got %v want %v", err, ErrInvalidQuery)
 	}
 }

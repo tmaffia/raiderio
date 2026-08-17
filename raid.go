@@ -291,6 +291,10 @@ func unmarshalBossKillRoster(k *bossKillResp) []RosterCharacter {
 }
 
 func validateGuildBossKillQuery(q *GuildBossKillQuery) error {
+	if q == nil {
+		return ErrInvalidQuery
+	}
+
 	if q.Region == "" {
 		return ErrInvalidRegion
 	}
@@ -430,6 +434,9 @@ type RaidProgressionGuild struct {
 }
 
 func validateBossRankingsQuery(q *BossRankingsQuery) error {
+	if q == nil {
+		return ErrInvalidQuery
+	}
 	if q.RaidSlug == "" {
 		return ErrInvalidRaidName
 	}
@@ -446,6 +453,9 @@ func validateBossRankingsQuery(q *BossRankingsQuery) error {
 }
 
 func validateRaidQuery(q *RaidQuery) error {
+	if q == nil {
+		return ErrInvalidQuery
+	}
 	if q.Slug == "" {
 		return ErrInvalidRaidName
 	}
