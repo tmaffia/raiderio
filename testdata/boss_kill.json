@@ -1,0 +1,24 @@
+{
+  "kill": {
+    "pulledAt": "2022-12-27T05:17:25.488Z",
+    "defeatedAt": "2022-12-27T05:24:02.478Z",
+    "durationMs": 396990,
+    "isSuccess": true,
+    "itemLevelEquippedAvg": 403.45,
+    "itemLevelEquippedMax": 407.375,
+    "itemLevelEquippedMin": 397.062
+  },
+  "roster": [
+    {
+      "character": {
+        "name": "Drbananaphd",
+        "class": {"slug": "priest"},
+        "spec": {"slug": "holy"},
+        "talentLoadout": {"loadoutSpecId": 257, "loadoutText": "ABC"},
+        "realm": {"slug": "illidan"},
+        "region": {"slug": "us"},
+        "itemLevelEquipped": 400.2
+      }
+    }
+  ]
+}

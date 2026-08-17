@@ -1,0 +1,13 @@
+{
+  "name": "Warpath",
+  "faction": "horde",
+  "region": "us",
+  "realm": "Illidan",
+  "members": [{"rank": 0, "character": {"name": "Tyghon", "class": "Mage"}}],
+  "raid_progression": {
+    "tier-mn-1": {"summary": "9/9 M", "total_bosses": 9, "mythic_bosses_killed": 9}
+  },
+  "raid_rankings": {
+    "tier-mn-1": {"mythic": {"world": 96, "region": 29, "realm": 8}}
+  }
+}
