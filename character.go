@@ -1,6 +1,7 @@
 package raiderio
 
 import (
+	"net/url"
 	"strings"
 	"time"
 )
@@ -219,72 +220,88 @@ type TalentLoadout struct {
 	LoadoutText   string `json:"loadout_text"`
 }
 
-// validateCharacterQuery creates and validates a CharacterQuery struct
-// It returns an error if any of the required parameters are empty
-// or if the fields are invalid
-func validateCharacterQuery(cq *CharacterQuery) ([]string, error) {
-	if cq == nil {
-		return nil, ErrInvalidQuery
+// validate checks the required fields of a CharacterQuery.
+func (q *CharacterQuery) validate() error {
+	if q == nil {
+		return ErrInvalidQuery
 	}
 
-	if cq.Region == "" {
-		return nil, ErrInvalidRegion
+	if q.Region == "" {
+		return ErrInvalidRegion
 	}
 
-	if cq.Realm == "" {
-		return nil, ErrInvalidRealm
+	if q.Realm == "" {
+		return ErrInvalidRealm
 	}
 
-	if cq.Name == "" {
-		return nil, ErrInvalidCharName
+	if q.Name == "" {
+		return ErrInvalidCharName
 	}
 
+	return nil
+}
+
+// params builds the URL parameters for a character profile request.
+func (q *CharacterQuery) params() url.Values {
+	params := url.Values{
+		"region": {string(q.Region)},
+		"realm":  {q.Realm},
+		"name":   {q.Name},
+	}
+	if fields := q.fields(); len(fields) > 0 {
+		params.Set("fields", strings.Join(fields, ","))
+	}
+	return params
+}
+
+// fields builds the optional request fields from the boolean/slice toggles.
+func (q *CharacterQuery) fields() []string {
 	var fields []string
-	if cq.TalentLoadout {
+	if q.TalentLoadout {
 		fields = append(fields, "talents")
 	}
-	if cq.Gear {
+	if q.Gear {
 		fields = append(fields, "gear")
 	}
-	if cq.Guild {
+	if q.Guild {
 		fields = append(fields, "guild")
 	}
-	if cq.RaidProgression {
+	if q.RaidProgression {
 		fields = append(fields, "raid_progression")
 	}
-	if len(cq.MythicPlusScoresBySeason) > 0 {
-		fields = append(fields, "mythic_plus_scores_by_season:"+strings.Join(cq.MythicPlusScoresBySeason, ":"))
+	if len(q.MythicPlusScoresBySeason) > 0 {
+		fields = append(fields, "mythic_plus_scores_by_season:"+strings.Join(q.MythicPlusScoresBySeason, ":"))
 	}
-	if cq.MythicPlusRanks {
+	if q.MythicPlusRanks {
 		fields = append(fields, "mythic_plus_ranks")
 	}
-	if cq.PreviousMythicPlusRanks {
+	if q.PreviousMythicPlusRanks {
 		fields = append(fields, "previous_mythic_plus_ranks")
 	}
-	if cq.MythicPlusRecentRuns {
+	if q.MythicPlusRecentRuns {
 		fields = append(fields, "mythic_plus_recent_runs")
 	}
 	switch {
-	case cq.MythicPlusBestRunsAll:
+	case q.MythicPlusBestRunsAll:
 		fields = append(fields, "mythic_plus_best_runs:all")
-	case cq.MythicPlusBestRuns:
+	case q.MythicPlusBestRuns:
 		fields = append(fields, "mythic_plus_best_runs")
 	}
-	if cq.MythicPlusHighestLevelRuns {
+	if q.MythicPlusHighestLevelRuns {
 		fields = append(fields, "mythic_plus_highest_level_runs")
 	}
-	if cq.MythicPlusWeeklyHighestLevelRuns {
+	if q.MythicPlusWeeklyHighestLevelRuns {
 		fields = append(fields, "mythic_plus_weekly_highest_level_runs")
 	}
-	if cq.MythicPlusPreviousWeeklyHighestLevelRuns {
+	if q.MythicPlusPreviousWeeklyHighestLevelRuns {
 		fields = append(fields, "mythic_plus_previous_weekly_highest_level_runs")
 	}
-	if len(cq.RaidAchievementMeta) > 0 {
-		fields = append(fields, "raid_achievement_meta:"+strings.Join(cq.RaidAchievementMeta, ":"))
+	if len(q.RaidAchievementMeta) > 0 {
+		fields = append(fields, "raid_achievement_meta:"+strings.Join(q.RaidAchievementMeta, ":"))
 	}
-	if len(cq.RaidAchievementCurve) > 0 {
-		fields = append(fields, "raid_achievement_curve:"+strings.Join(cq.RaidAchievementCurve, ":"))
+	if len(q.RaidAchievementCurve) > 0 {
+		fields = append(fields, "raid_achievement_curve:"+strings.Join(q.RaidAchievementCurve, ":"))
 	}
 
-	return fields, nil
+	return fields
 }

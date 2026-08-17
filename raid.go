@@ -2,12 +2,14 @@ package raiderio
 
 import (
 	"encoding/json"
+	"net/url"
+	"strconv"
 	"time"
 )
 
-// RaidQuery is a struct that represents the query parameters
-// sent for a raid request
-// Supports optional request fields: difficulty, region, realm, name
+// RaidQuery is the query for raid-scoped endpoints. Slug, Difficulty, and
+// Region are required. Realm, Limit, and Page are only honored by the
+// raid-rankings endpoint and ignored by hall-of-fame and progression.
 type RaidQuery struct {
 	Slug       string
 	Difficulty RaidDifficulty
@@ -155,7 +157,7 @@ type Encounter struct {
 // Options are "normal", "heroic", and "mythic"
 type RaidDifficulty string
 
-// Options for different difficulties for raid and dugneon queries
+// Options for different raid difficulties
 
 const (
 	NORMAL_RAID RaidDifficulty = "normal"
@@ -241,9 +243,8 @@ type GuildBossKillQuery struct {
 	Difficulty RaidDifficulty
 }
 
-// Current /guild/boss-kill api returns an enormous json
-// structure for each character in the raid roster
-// this library offers a simplified version of the data set
+// The /guilds/boss-kill endpoint returns an enormous JSON structure for each
+// character in the raid roster; this library maps it to a simplified shape.
 func unmarshalGuildBossKill(b []byte) (*BossKill, error) {
 	resp := bossKillResp{}
 	err := json.Unmarshal(b, &resp)
@@ -288,7 +289,7 @@ func unmarshalBossKillRoster(k *bossKillResp) []RosterCharacter {
 	return chars
 }
 
-func validateGuildBossKillQuery(q *GuildBossKillQuery) error {
+func (q *GuildBossKillQuery) validate() error {
 	if q == nil {
 		return ErrInvalidQuery
 	}
@@ -320,19 +321,32 @@ func validateGuildBossKillQuery(q *GuildBossKillQuery) error {
 	return nil
 }
 
+func (q *GuildBossKillQuery) params() url.Values {
+	return url.Values{
+		"raid":       {q.RaidSlug},
+		"difficulty": {string(q.Difficulty)},
+		"region":     {string(q.Region)},
+		"realm":      {q.Realm},
+		"guild":      {q.GuildName},
+		"boss":       {q.BossSlug},
+	}
+}
+
 func raidDifficultyValid(d RaidDifficulty) bool {
 	return d == NORMAL_RAID || d == HEROIC_RAID || d == MYTHIC_RAID
 }
 
-func validateRaidRankingsQuery(rq *RaidQuery) error {
-	if err := validateRaidQuery(rq); err != nil {
+// validateRankings checks a RaidQuery for the raid-rankings endpoint, which
+// additionally supports limit and page.
+func (q *RaidQuery) validateRankings() error {
+	if err := q.validate(); err != nil {
 		return err
 	}
-	if rq.Limit < 0 {
+	if q.Limit < 0 {
 		return ErrLimitOutOfBounds
 	}
 
-	if rq.Page < 0 {
+	if q.Page < 0 {
 		return ErrPageOutOfBounds
 	}
 
@@ -431,7 +445,7 @@ type RaidProgressionGuild struct {
 	Guild      RaidGuild `json:"guild"`
 }
 
-func validateBossRankingsQuery(q *BossRankingsQuery) error {
+func (q *BossRankingsQuery) validate() error {
 	if q == nil {
 		return ErrInvalidQuery
 	}
@@ -450,7 +464,20 @@ func validateBossRankingsQuery(q *BossRankingsQuery) error {
 	return nil
 }
 
-func validateRaidQuery(q *RaidQuery) error {
+func (q *BossRankingsQuery) params() url.Values {
+	params := url.Values{
+		"raid":       {q.RaidSlug},
+		"boss":       {q.BossSlug},
+		"difficulty": {string(q.Difficulty)},
+		"region":     {string(q.Region)},
+	}
+	if q.Realm != "" {
+		params.Set("realm", q.Realm)
+	}
+	return params
+}
+
+func (q *RaidQuery) validate() error {
 	if q == nil {
 		return ErrInvalidQuery
 	}
@@ -464,4 +491,29 @@ func validateRaidQuery(q *RaidQuery) error {
 		return ErrInvalidRegion
 	}
 	return nil
+}
+
+// params returns the params shared by all raid-scoped endpoints.
+func (q *RaidQuery) params() url.Values {
+	return url.Values{
+		"raid":       {q.Slug},
+		"difficulty": {string(q.Difficulty)},
+		"region":     {string(q.Region)},
+	}
+}
+
+// rankingParams returns the params for the raid-rankings endpoint, the only
+// raid endpoint that supports realm, limit, and page.
+func (q *RaidQuery) rankingParams() url.Values {
+	params := q.params()
+	if q.Realm != "" {
+		params.Set("realm", q.Realm)
+	}
+	if q.Limit != 0 {
+		params.Set("limit", strconv.Itoa(q.Limit))
+	}
+	if q.Page != 0 {
+		params.Set("page", strconv.Itoa(q.Page))
+	}
+	return params
 }

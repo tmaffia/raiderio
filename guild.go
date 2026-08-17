@@ -1,6 +1,10 @@
 package raiderio
 
-import "time"
+import (
+	"net/url"
+	"strings"
+	"time"
+)
 
 // GuildQuery is a struct that represents the query parameters
 // sent for a guild profile request
@@ -35,37 +39,53 @@ type Member struct {
 	Character Character `json:"character"`
 }
 
-// createGuildQuery creates and validates a GuildQuery struct
-// It returns an error if any of the required parameters are empty
-// or if the fields are invalid
-func createGuildQuery(gq *GuildQuery) ([]string, error) {
-	if gq == nil {
-		return nil, ErrInvalidQuery
+// validate checks the required fields of a GuildQuery.
+func (q *GuildQuery) validate() error {
+	if q == nil {
+		return ErrInvalidQuery
 	}
 
-	if gq.Region == "" {
-		return nil, ErrInvalidRegion
+	if q.Region == "" {
+		return ErrInvalidRegion
 	}
 
-	if gq.Realm == "" {
-		return nil, ErrInvalidRealm
+	if q.Realm == "" {
+		return ErrInvalidRealm
 	}
 
-	if gq.Name == "" {
-		return nil, ErrInvalidGuildName
+	if q.Name == "" {
+		return ErrInvalidGuildName
 	}
 
+	return nil
+}
+
+// params builds the URL parameters for a guild profile request.
+func (q *GuildQuery) params() url.Values {
+	params := url.Values{
+		"region": {string(q.Region)},
+		"realm":  {q.Realm},
+		"name":   {q.Name},
+	}
+	if fields := q.fields(); len(fields) > 0 {
+		params.Set("fields", strings.Join(fields, ","))
+	}
+	return params
+}
+
+// fields builds the optional request fields from the boolean toggles.
+func (q *GuildQuery) fields() []string {
 	var fields []string
-	if gq.Members {
+	if q.Members {
 		fields = append(fields, "members")
 	}
 
-	if gq.RaidProgression {
+	if q.RaidProgression {
 		fields = append(fields, "raid_progression")
 	}
 
-	if gq.RaidRankings {
+	if q.RaidRankings {
 		fields = append(fields, "raid_rankings")
 	}
-	return fields, nil
+	return fields
 }
