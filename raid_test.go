@@ -1,37 +1,41 @@
-package raiderio_test
+package raiderio
 
 import (
+	"errors"
 	"testing"
-
-	"github.com/tmaffia/raiderio"
+	"time"
 )
 
 func TestGetRaidBySlug(t *testing.T) {
-	testCases := []struct {
-		slug           string
-		expectedName   string
-		expectedErrMsg string
-	}{
-		{slug: "nerubar-palace", expectedName: "Nerub-ar Palace"},
-		{slug: "invalid raid slug", expectedErrMsg: "invalid raid"},
-		{slug: "nerubar-palaceinvalid raid slug", expectedErrMsg: "invalid raid"},
+	raids := &Raids{Raids: []Raid{{Slug: "nerubar-palace", Name: "Nerub-ar Palace"}}}
+	r, err := raids.GetRaidBySlug("nerubar-palace")
+	if err != nil || r.Name != "Nerub-ar Palace" {
+		t.Fatalf("got %+v err %v", r, err)
 	}
+	if _, err := raids.GetRaidBySlug("nope"); !errors.Is(err, ErrInvalidRaid) {
+		t.Fatal(err)
+	}
+}
 
-	ctx, cancel := ctx()
-	defer cancel()
-	raids, err := c.GetRaids(ctx, raiderio.WAR_WITHIN)
+func TestUnmarshalGuildBossKill(t *testing.T) {
+	k, err := unmarshalGuildBossKill(testdata(t, "boss_kill.json"))
 	if err != nil {
-		t.Fatalf("Error getting raids: %v", err)
+		t.Fatal(err)
+	}
+	if !k.Kill.IsSuccess || k.Kill.Duration != 396990*time.Millisecond {
+		t.Fatalf("kill %+v", k.Kill)
+	}
+	if len(k.Roster) != 1 {
+		t.Fatalf("roster %d", len(k.Roster))
+	}
+	c := k.Roster[0]
+	if c.Name != "Drbananaphd" || c.Class != "priest" || c.Spec != "holy" ||
+		c.Realm != "illidan" || c.Region != "us" ||
+		c.TalentLoadout.LoadoutText != "ABC" || c.Gear.ItemLevelEquipped != 400 {
+		t.Fatalf("char %+v", c)
 	}
 
-	for _, tc := range testCases {
-		raid, err := raids.GetRaidBySlug(tc.slug)
-		if err != nil && err.Error() != tc.expectedErrMsg {
-			t.Fatalf("expected error: %v, got: %v", tc.expectedErrMsg, err.Error())
-		}
-
-		if err == nil && raid.Name != tc.expectedName {
-			t.Fatalf("expected raid name: %v, got: %v", tc.expectedName, raid.Name)
-		}
+	if _, err := unmarshalGuildBossKill([]byte(`{`)); err == nil {
+		t.Fatal("expected error")
 	}
 }

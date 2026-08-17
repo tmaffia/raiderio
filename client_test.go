@@ -1,608 +1,395 @@
-package raiderio_test
+package raiderio
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
-
-	"github.com/tmaffia/raiderio"
 )
 
-var c *raiderio.Client
-
-func ctx() (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), 30*time.Second)
-}
-
-func testCtx(timeout bool) (context.Context, context.CancelFunc) {
-	if timeout {
-		return context.WithTimeout(context.Background(), time.Millisecond)
+func testdata(t *testing.T, name string) []byte {
+	t.Helper()
+	b, err := os.ReadFile(filepath.Join("testdata", name))
+	if err != nil {
+		t.Fatal(err)
 	}
-	return ctx()
+	return b
 }
 
-func setup() {
-	c = raiderio.NewClient(os.Getenv("RAIDERIO_ACCESS_KEY"))
+func testClient(t *testing.T, h http.HandlerFunc) *Client {
+	t.Helper()
+	ts := httptest.NewServer(h)
+	t.Cleanup(ts.Close)
+	c := NewClient()
+	c.ApiUrl = ts.URL
+	return c
 }
 
-func TestMain(m *testing.M) {
-	setup()
-	exitCode := m.Run()
-	os.Exit(exitCode)
+func mustNotHit(t *testing.T) *Client {
+	t.Helper()
+	return testClient(t, func(http.ResponseWriter, *http.Request) {
+		t.Fatal("request should not be sent")
+	})
 }
 
 func TestNewClient(t *testing.T) {
-	if c.ApiUrl != "https://raider.io/api/v1" {
-		t.Errorf("NewClient apiUrl created incorrectly")
+	if NewClient().ApiUrl != "https://raider.io/api/v1" {
+		t.Fatal(NewClient().ApiUrl)
+	}
+	if NewClient().AccessKey != "" {
+		t.Fatal("expected empty key")
+	}
+	if NewClient("k").AccessKey != "k" {
+		t.Fatal("expected key")
 	}
 }
 
-func TestClient_WithAccessKey(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		keys, ok := r.URL.Query()["access_key"]
-		if !ok || len(keys[0]) < 1 {
-			t.Errorf("access_key query param not found")
+func TestGetCharacter(t *testing.T) {
+	var path, fields string
+	c := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+		path = r.URL.Path
+		fields = r.URL.Query().Get("fields")
+		q := r.URL.Query()
+		if q.Get("region") != "us" || q.Get("realm") != "illidan" || q.Get("name") != "highervalue" {
+			t.Errorf("query %v", q)
 		}
-		if keys[0] != "test_key" {
-			t.Errorf("access_key expected: test_key, got: %v", keys[0])
+		if fields == "" {
+			w.Write(testdata(t, "character.json"))
+			return
 		}
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"name": "Test Character"}`))
-	}))
-	defer ts.Close()
-
-	client := raiderio.NewClient("test_key")
-	client.ApiUrl = ts.URL
-
-	_, err := client.GetCharacter(context.Background(), &raiderio.CharacterQuery{
-		Region: raiderio.US,
-		Realm:  "illidan",
-		Name:   "test",
+		w.Write(testdata(t, "character_fields.json"))
 	})
 
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-}
-
-func TestClient_NoAccessKey(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		keys, ok := r.URL.Query()["access_key"]
-		if ok && len(keys) > 0 {
-			t.Errorf("access_key query param should NOT be present, got: %v", keys[0])
-		}
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"name": "Test Character"}`))
-	}))
-	defer ts.Close()
-
-	client := raiderio.NewClient()
-	client.ApiUrl = ts.URL
-
-	_, err := client.GetCharacter(context.Background(), &raiderio.CharacterQuery{
-		Region: raiderio.US,
-		Realm:  "illidan",
-		Name:   "test",
+	p, err := c.GetCharacter(context.Background(), &CharacterQuery{
+		Region: US, Realm: "illidan", Name: "highervalue",
 	})
+	if err != nil || p.Name != "Highervalue" {
+		t.Fatalf("got %+v err %v", p, err)
+	}
+	if path != "/characters/profile" {
+		t.Fatalf("path %s", path)
+	}
 
+	p, err = c.GetCharacter(context.Background(), &CharacterQuery{
+		Region: US, Realm: "illidan", Name: "highervalue",
+		Gear: true, TalentLoadout: true,
+	})
 	if err != nil {
-		t.Errorf("unexpected error: %v", err)
+		t.Fatal(err)
+	}
+	if fields != "talents,gear" {
+		t.Fatalf("fields %q", fields)
+	}
+	if p.Gear.ItemLevelEquipped <= 0 || p.TalentLoadout.LoadoutText == "" {
+		t.Fatalf("got %+v", p)
 	}
 }
 
-func TestGetCharacterProfile(t *testing.T) {
-	testCases := []struct {
-		timeout        bool
-		region         raiderio.Region
-		realm          string
-		name           string
-		expectedErrMsg string
-		expectedName   string
+func TestGetCharacter_validate(t *testing.T) {
+	c := mustNotHit(t)
+	cases := []struct {
+		q    CharacterQuery
+		want error
 	}{
-		{region: raiderio.US, realm: "illidan", name: "highervalue", expectedName: "Highervalue"},
-		{region: raiderio.US, realm: "", name: "highervalue", expectedErrMsg: "invalid realm"},
-		{region: raiderio.US, realm: "illidan", name: "", expectedErrMsg: "invalid character name"},
-		{region: "", realm: "illidan", name: "highervalue", expectedErrMsg: "invalid region"},
-		{region: raiderio.Region("badregion"), realm: "illidan", name: "impossiblecharactername", expectedErrMsg: "invalid query"},
-		{region: raiderio.US, realm: "illidan", name: "impossiblecharactername", expectedErrMsg: "character not found"},
-		{region: raiderio.US, realm: "invalidrealm", name: "highervalue", expectedErrMsg: "invalid realm"},
-		{timeout: true, region: raiderio.US, realm: "illidan", name: "highervalue", expectedErrMsg: "raiderio api request timeout"},
+		{CharacterQuery{Realm: "illidan", Name: "x"}, ErrInvalidRegion},
+		{CharacterQuery{Region: US, Name: "x"}, ErrInvalidRealm},
+		{CharacterQuery{Region: US, Realm: "illidan"}, ErrInvalidCharName},
 	}
-
-	for _, tc := range testCases {
-		ctx, cancel := testCtx(tc.timeout)
-		defer cancel()
-
-		profile, err := c.GetCharacter(ctx, &raiderio.CharacterQuery{
-			Region: tc.region,
-			Realm:  tc.realm,
-			Name:   tc.name,
-		})
-
-		if err != nil && err.Error() != tc.expectedErrMsg {
-			t.Fatalf("expected: %v, got: %v", tc.expectedErrMsg, err.Error())
+	for _, tc := range cases {
+		_, err := c.GetCharacter(context.Background(), &tc.q)
+		if !errors.Is(err, tc.want) {
+			t.Fatalf("%+v: got %v want %v", tc.q, err, tc.want)
 		}
-
-		if err == nil && profile.Name != tc.expectedName {
-			t.Fatalf("character name expected: %v, got: %v", tc.expectedName, profile.Name)
-		}
-	}
-}
-
-func TestGetCharacterWGear(t *testing.T) {
-	testCases := []struct {
-		timeout        bool
-		region         raiderio.Region
-		realm          string
-		name           string
-		expectedErrMsg string
-		expectedName   string
-	}{
-		{region: raiderio.US, realm: "illidan", name: "highervalue", expectedName: "Highervalue"},
-		{timeout: true, region: raiderio.US, realm: "illidan", name: "highervalue", expectedErrMsg: "raiderio api request timeout"},
-	}
-
-	for _, tc := range testCases {
-		ctx, cancel := testCtx(tc.timeout)
-		defer cancel()
-
-		profile, err := c.GetCharacter(ctx, &raiderio.CharacterQuery{
-			Region: tc.region,
-			Realm:  tc.realm,
-			Name:   tc.name,
-			Gear:   true,
-		})
-
-		if err != nil && err.Error() != tc.expectedErrMsg {
-			t.Fatalf("expected: %v, got: %v", tc.expectedErrMsg, err.Error())
-		}
-
-		if err == nil && profile.Name != tc.expectedName {
-			t.Fatalf("character name expected: %v, got: %v. item level equipped: %d", tc.expectedName, profile.Name, profile.Gear.ItemLevelEquipped)
-		}
-
-		if err == nil && profile.Gear.ItemLevelEquipped <= 0 {
-			t.Fatalf("character item level equipped: %d, expected > 0", profile.Gear.ItemLevelEquipped)
-		}
-	}
-}
-
-func TestGetCharacterWTalents(t *testing.T) {
-	cq := raiderio.CharacterQuery{
-		Region:        raiderio.US,
-		Realm:         "illidan",
-		Name:          "highervalue",
-		TalentLoadout: true,
-	}
-
-	ctx, cancel := ctx()
-	defer cancel()
-	profile, err := c.GetCharacter(ctx, &cq)
-	if err == nil && profile.TalentLoadout.LoadoutText == "" {
-		t.Fatalf("talent loadout: %v expected to not be empty", profile.TalentLoadout.LoadoutText)
 	}
 }
 
 func TestGetGuild(t *testing.T) {
-	testCases := []struct {
-		timeout        bool
-		region         raiderio.Region
-		realm          string
-		name           string
-		expectedErrMsg string
-		expectedName   string
-	}{
-		{region: raiderio.US, realm: "illidan", name: "warpath", expectedName: "Warpath"},
-		{region: raiderio.US, realm: "", name: "warpath", expectedErrMsg: "invalid realm"},
-		{region: raiderio.US, realm: "illidan", name: "", expectedErrMsg: "invalid guild name"},
-		{region: "", realm: "illidan", name: "highervalue", expectedErrMsg: "invalid region"},
-		{region: raiderio.Region("badregion"), realm: "illidan", name: "warpath", expectedErrMsg: "invalid query"},
-		{region: raiderio.US, realm: "illidan", name: "impossible_guild_name", expectedErrMsg: "guild not found"},
-		{region: raiderio.US, realm: "invalidrealm", name: "highervalue", expectedErrMsg: "invalid realm"},
-		{timeout: true, region: raiderio.US, realm: "illidan", name: "highervalue", expectedErrMsg: "raiderio api request timeout"},
-	}
+	var path, fields string
+	c := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+		path = r.URL.Path
+		fields = r.URL.Query().Get("fields")
+		w.Write(testdata(t, "guild.json"))
+	})
 
-	for _, tc := range testCases {
-		ctx, cancel := testCtx(tc.timeout)
-		defer cancel()
-
-		profile, err := c.GetGuild(ctx, &raiderio.GuildQuery{
-			Region: tc.region,
-			Realm:  tc.realm,
-			Name:   tc.name,
-		})
-
-		if err != nil && err.Error() != tc.expectedErrMsg {
-			t.Fatalf("expected: %v, got: %v", tc.expectedErrMsg, err.Error())
-		}
-
-		if err == nil && profile.Name != tc.expectedName {
-			t.Fatalf("guild name expected: %v, got: %v.", tc.expectedName, profile.Name)
-		}
-	}
-}
-
-func TestGetGuildWMembers(t *testing.T) {
-	ctx, cancel := ctx()
-	defer cancel()
-	profile, err := c.GetGuild(ctx, &raiderio.GuildQuery{
-		Region:  raiderio.US,
-		Realm:   "illidan",
-		Name:    "warpath",
-		Members: true,
+	g, err := c.GetGuild(context.Background(), &GuildQuery{
+		Region: US, Realm: "illidan", Name: "warpath",
+		Members: true, RaidProgression: true, RaidRankings: true,
 	})
 	if err != nil {
-		t.Fatalf("Error getting guild: %v", err)
+		t.Fatal(err)
 	}
-	if len(profile.Members) == 0 {
-		t.Fatalf("Error getting guild members")
+	if path != "/guilds/profile" {
+		t.Fatalf("path %s", path)
 	}
-}
-
-func TestGetGuildWRaidProgression(t *testing.T) {
-	ctx, cancel := ctx()
-	defer cancel()
-	profile, err := c.GetGuild(ctx, &raiderio.GuildQuery{
-		Region:          raiderio.US,
-		Realm:           "illidan",
-		Name:            "warpath",
-		RaidProgression: true,
-	})
-	if err != nil {
-		t.Fatalf("Error getting guild %v", err)
+	if fields != "members,raid_progression,raid_rankings" {
+		t.Fatalf("fields %q", fields)
 	}
-	ok := false
-	for _, p := range profile.RaidProgression {
-		ok = ok || p.Summary != ""
+	if g.Name != "Warpath" || len(g.Members) == 0 {
+		t.Fatalf("got %+v", g)
 	}
-	if !ok {
-		t.Fatalf("Error getting guild raid progression, got: %v", profile.RaidProgression)
+	if g.RaidProgression["tier-mn-1"].Summary != "9/9 M" {
+		t.Fatalf("progression %+v", g.RaidProgression)
+	}
+	if g.RaidRankings["tier-mn-1"].Mythic.World == 0 {
+		t.Fatalf("rankings %+v", g.RaidRankings)
 	}
 }
 
-func TestGetGuildWRaidRankings(t *testing.T) {
-	testCases := []struct {
-		timeout        bool
-		region         raiderio.Region
-		realm          string
-		name           string
-		raidName       string
-		expectedErrMsg string
+func TestGetGuild_validate(t *testing.T) {
+	c := mustNotHit(t)
+	cases := []struct {
+		q    GuildQuery
+		want error
 	}{
-		{region: raiderio.US, realm: "illidan", name: "warpath",
-			raidName: "tier-mn-1"},
-		{timeout: true, region: raiderio.US, realm: "illidan", name: "warpath",
-			raidName:       "tier-mn-1",
-			expectedErrMsg: "raiderio api request timeout"},
+		{GuildQuery{Realm: "illidan", Name: "x"}, ErrInvalidRegion},
+		{GuildQuery{Region: US, Name: "x"}, ErrInvalidRealm},
+		{GuildQuery{Region: US, Realm: "illidan"}, ErrInvalidGuildName},
 	}
-
-	for _, tc := range testCases {
-		ctx, cancel := testCtx(tc.timeout)
-		defer cancel()
-
-		profile, err := c.GetGuild(ctx, &raiderio.GuildQuery{
-			Region:       raiderio.US,
-			Realm:        "illidan",
-			Name:         "warpath",
-			RaidRankings: true,
-		})
-
-		if err != nil && err.Error() != tc.expectedErrMsg {
-			t.Fatalf("error message got: %v, expected: %v",
-				err.Error(), tc.expectedErrMsg)
-		}
-
-		if err == nil {
-			rank := profile.RaidRankings[tc.raidName]
-			if rank.Mythic.World == 0 {
-				t.Fatalf("mythic guild ranking for raid: %v missing", tc.raidName)
-			}
-		}
-	}
-}
-
-func TestGetGuildBossKill(t *testing.T) {
-	testCases := []struct {
-		region                raiderio.Region
-		realm                 string
-		guildName             string
-		raidSlug              string
-		bossSlug              string
-		difficulty            raiderio.RaidDifficulty
-		expectedDefeatedAt    string
-		expectedCharacterName string
-		expectedErrMsg        string
-		timeout               bool
-	}{
-		{region: raiderio.US, realm: "illidan", guildName: "warpath",
-			raidSlug: "vault-of-the-incarnates", bossSlug: "terros",
-			difficulty: raiderio.MYTHIC_RAID, expectedCharacterName: "Drbananaphd"},
-		{region: "", difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
-			guildName: "warpath", raidSlug: "vault-of-the-incarnates",
-			bossSlug: "terros", expectedErrMsg: "invalid region"},
-		{region: raiderio.US, difficulty: raiderio.MYTHIC_RAID,
-			realm: "invalid-realm", guildName: "warpath", raidSlug: "vault-of-the-incarnates",
-			bossSlug: "terros", expectedErrMsg: "invalid realm"},
-		{region: raiderio.US, difficulty: raiderio.MYTHIC_RAID,
-			guildName: "warpath", raidSlug: "vault-of-the-incarnates",
-			bossSlug: "terros", expectedErrMsg: "invalid realm"},
-		{region: raiderio.US, difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
-			guildName: "impossible-guild_name", raidSlug: "vault-of-the-incarnates",
-			bossSlug: "terros", expectedErrMsg: "guild not found"},
-		{region: raiderio.US, difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
-			raidSlug: "vault-of-the-incarnates", bossSlug: "terros",
-			expectedErrMsg: "invalid guild name"},
-		{region: raiderio.US, difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
-			guildName: "warpath", raidSlug: "invalid-raid-slug", bossSlug: "terros",
-			expectedErrMsg: "invalid query"},
-		{region: raiderio.US, difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
-			guildName: "warpath", bossSlug: "terros",
-			expectedErrMsg: "invalid raid name"},
-		{region: raiderio.US, difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
-			guildName: "warpath", raidSlug: "vault-of-the-incarnates",
-			bossSlug: "invalid-boss-slug", expectedErrMsg: "invalid boss"},
-		{region: raiderio.US, difficulty: raiderio.MYTHIC_RAID, realm: "illidan",
-			guildName: "warpath", raidSlug: "vault-of-the-incarnates",
-			expectedErrMsg: "invalid boss"},
-		{region: raiderio.US, realm: "illidan", guildName: "warpath",
-			raidSlug: "vault-of-the-incarnates", bossSlug: "terros",
-			expectedErrMsg: "invalid raid difficulty"},
-		{timeout: true, region: raiderio.US, realm: "illidan", guildName: "warpath",
-			raidSlug: "vault-of-the-incarnates", bossSlug: "terros",
-			difficulty:     raiderio.MYTHIC_RAID,
-			expectedErrMsg: "raiderio api request timeout"},
-	}
-
-	for _, tc := range testCases {
-		ctx, cancel := testCtx(tc.timeout)
-		defer cancel()
-
-		k, err := c.GetGuildBossKill(ctx, &raiderio.GuildBossKillQuery{
-			Region:     tc.region,
-			Realm:      tc.realm,
-			GuildName:  tc.guildName,
-			RaidSlug:   tc.raidSlug,
-			BossSlug:   tc.bossSlug,
-			Difficulty: tc.difficulty,
-		})
-
-		if err != nil && err.Error() != tc.expectedErrMsg {
-			t.Fatalf("error message got: %v, expected: %v", err.Error(), tc.expectedErrMsg)
-		}
-
-		if err == nil && !killIncludesCharacter(k, tc.expectedCharacterName) {
-			t.Fatalf("boss kill character name expected: %v", tc.expectedCharacterName)
+	for _, tc := range cases {
+		_, err := c.GetGuild(context.Background(), &tc.q)
+		if !errors.Is(err, tc.want) {
+			t.Fatalf("%+v: got %v want %v", tc.q, err, tc.want)
 		}
 	}
 }
 
 func TestGetRaids(t *testing.T) {
-	testCases := []struct {
-		timeout          bool
-		expansion        raiderio.Expansion
-		raidName         string
-		expectedRaidName string
-		expectedErrMsg   string
-	}{
-		{expansion: raiderio.DRAGONFLIGHT, raidName: "aberrus-the-shadowed-crucible", expectedRaidName: "Aberrus, the Shadowed Crucible"},
-		{expansion: raiderio.MIDNIGHT, raidName: "sporefall", expectedRaidName: "Sporefall"},
-		{timeout: true, expansion: raiderio.DRAGONFLIGHT, raidName: "aberrus-the-shadowed-crucible", expectedErrMsg: "raiderio api request timeout"},
-		{expansion: 2, expectedErrMsg: "unsupported expansion"},
+	var path, exp string
+	c := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+		path = r.URL.Path
+		exp = r.URL.Query().Get("expansion_id")
+		w.Write(testdata(t, "raids.json"))
+	})
+
+	raids, err := c.GetRaids(context.Background(), WAR_WITHIN)
+	if err != nil {
+		t.Fatal(err)
 	}
-
-	for _, tc := range testCases {
-		ctx, cancel := testCtx(tc.timeout)
-		defer cancel()
-
-		raids, err := c.GetRaids(ctx, tc.expansion)
-		if err != nil && err.Error() != tc.expectedErrMsg {
-			t.Fatalf("expected error: %v, got %v", tc.expectedErrMsg, err.Error())
-		}
-
-		if err == nil {
-			raid, _ := raids.GetRaidBySlug(tc.raidName)
-			if raid.Name != tc.expectedRaidName {
-				t.Fatalf("expected raid name: %v, got: %v", tc.expectedRaidName, raid.Name)
-			}
-		}
-
+	if path != "/raiding/static-data" || exp != "10" {
+		t.Fatalf("path %s expansion_id %s", path, exp)
+	}
+	r, err := raids.GetRaidBySlug("nerubar-palace")
+	if err != nil || r.Name != "Nerub-ar Palace" {
+		t.Fatalf("got %+v err %v", r, err)
 	}
 }
 
 func TestGetRaidRankings(t *testing.T) {
-	testCases := []struct {
-		timeout        bool
-		slug           string
-		difficulty     raiderio.RaidDifficulty
-		region         raiderio.Region
-		realm          string
-		limit          int
-		page           int
-		expectedErrMsg string
-	}{
-		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: raiderio.WORLD, limit: 1},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US,
-			realm: "proudmoore", limit: 1},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: "mythic", region: raiderio.EU, limit: 1},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US,
-			realm: "illidan", limit: 1},
-		{slug: "invalid raid slug", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, realm: "illidan",
-			expectedErrMsg: "invalid query"},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: "mythic", region: "", realm: "illidan", expectedErrMsg: "invalid region"},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: "", region: raiderio.US, realm: "illidan",
-			expectedErrMsg: "invalid raid difficulty"},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: "invalid-difficulty", region: raiderio.US, realm: "illidan",
-			expectedErrMsg: "invalid raid difficulty"},
-		{slug: "", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, realm: "illidan",
-			expectedErrMsg: "invalid raid name"},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: raiderio.WORLD, limit: 20},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: raiderio.WORLD, limit: -20,
-			expectedErrMsg: "limit must be a positive int"},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, limit: 40, page: 2},
-		{slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, limit: 40,
-			page: -2, expectedErrMsg: "page must be a positive int"},
-		{timeout: true, slug: "aberrus-the-shadowed-crucible", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US,
-			expectedErrMsg: "raiderio api request timeout"},
+	var path string
+	var q url.Values
+	c := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+		path = r.URL.Path
+		q = r.URL.Query()
+		w.Write(testdata(t, "raid_rankings.json"))
+	})
+
+	got, err := c.GetRaidRankings(context.Background(), &RaidQuery{
+		Slug: "nerubar-palace", Difficulty: MYTHIC_RAID, Region: US,
+		Realm: "illidan", Limit: 1, Page: 2,
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
+	if path != "/raiding/raid-rankings" {
+		t.Fatalf("path %s", path)
+	}
+	if q.Get("raid") != "nerubar-palace" || q.Get("difficulty") != "mythic" ||
+		q.Get("region") != "us" || q.Get("realm") != "illidan" ||
+		q.Get("limit") != "1" || q.Get("page") != "2" {
+		t.Fatalf("query %v", q)
+	}
+	if len(got.RaidRanking) != 1 || got.RaidRanking[0].Guild.Name != "Liquid" {
+		t.Fatalf("got %+v", got)
+	}
+}
 
-	for _, tc := range testCases {
-		ctx, cancel := testCtx(tc.timeout)
-		defer cancel()
-
-		rankings, err := c.GetRaidRankings(ctx, &raiderio.RaidQuery{
-			Slug:       tc.slug,
-			Difficulty: raiderio.RaidDifficulty(tc.difficulty),
-			Region:     tc.region,
-			Realm:      tc.realm,
-			Limit:      tc.limit,
-			Page:       tc.page,
-		})
-		if err != nil && err.Error() != tc.expectedErrMsg {
-			t.Fatalf("expected error: %v, got: %v", tc.expectedErrMsg, err.Error())
-		}
-
-		if err == nil && tc.limit != 0 {
-			if len(rankings.RaidRanking) != tc.limit {
-				t.Fatalf("expected results limit: %v, got: %v", tc.limit, len(rankings.RaidRanking))
-			}
-		} else if err == nil && len(rankings.RaidRanking) == 0 {
-			t.Fatalf("expected results to not be empty")
+func TestGetRaidRankings_validate(t *testing.T) {
+	c := mustNotHit(t)
+	ok := RaidQuery{Slug: "x", Difficulty: MYTHIC_RAID, Region: US}
+	cases := []struct {
+		q    RaidQuery
+		want error
+	}{
+		{RaidQuery{Difficulty: MYTHIC_RAID, Region: US}, ErrInvalidRaidName},
+		{RaidQuery{Slug: "x", Region: US}, ErrInvalidRaidDiff},
+		{RaidQuery{Slug: "x", Difficulty: "nope", Region: US}, ErrInvalidRaidDiff},
+		{RaidQuery{Slug: "x", Difficulty: MYTHIC_RAID}, ErrInvalidRegion},
+		{func() RaidQuery { q := ok; q.Limit = -1; return q }(), ErrLimitOutOfBounds},
+		{func() RaidQuery { q := ok; q.Page = -1; return q }(), ErrPageOutOfBounds},
+	}
+	for _, tc := range cases {
+		_, err := c.GetRaidRankings(context.Background(), &tc.q)
+		if !errors.Is(err, tc.want) {
+			t.Fatalf("%+v: got %v want %v", tc.q, err, tc.want)
 		}
 	}
 }
 
-// Tests if character is a part of the particular boss kill
-func killIncludesCharacter(k *raiderio.BossKill, c string) bool {
-	for _, v := range k.Roster {
-		if v.Name == c {
-			return true
+func TestGetGuildBossKill(t *testing.T) {
+	var path string
+	var q url.Values
+	c := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+		path = r.URL.Path
+		q = r.URL.Query()
+		w.Write(testdata(t, "boss_kill.json"))
+	})
+
+	k, err := c.GetGuildBossKill(context.Background(), &GuildBossKillQuery{
+		Region: US, Realm: "illidan", GuildName: "warpath",
+		RaidSlug: "vault-of-the-incarnates", BossSlug: "terros", Difficulty: MYTHIC_RAID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if path != "/guilds/boss-kill" {
+		t.Fatalf("path %s", path)
+	}
+	if q.Get("raid") != "vault-of-the-incarnates" || q.Get("boss") != "terros" ||
+		q.Get("guild") != "warpath" || q.Get("difficulty") != "mythic" {
+		t.Fatalf("query %v", q)
+	}
+	if len(k.Roster) == 0 || k.Roster[0].Name != "Drbananaphd" {
+		t.Fatalf("got %+v", k)
+	}
+	if k.Kill.Duration != 396990*time.Millisecond || !k.Kill.IsSuccess {
+		t.Fatalf("kill %+v", k.Kill)
+	}
+}
+
+func TestGetGuildBossKill_validate(t *testing.T) {
+	c := mustNotHit(t)
+	ok := GuildBossKillQuery{
+		Region: US, Realm: "illidan", GuildName: "warpath",
+		RaidSlug: "x", BossSlug: "y", Difficulty: MYTHIC_RAID,
+	}
+	cases := []struct {
+		mut  func(*GuildBossKillQuery)
+		want error
+	}{
+		{func(q *GuildBossKillQuery) { q.Region = "" }, ErrInvalidRegion},
+		{func(q *GuildBossKillQuery) { q.Realm = "" }, ErrInvalidRealm},
+		{func(q *GuildBossKillQuery) { q.GuildName = "" }, ErrInvalidGuildName},
+		{func(q *GuildBossKillQuery) { q.RaidSlug = "" }, ErrInvalidRaidName},
+		{func(q *GuildBossKillQuery) { q.BossSlug = "" }, ErrInvalidBoss},
+		{func(q *GuildBossKillQuery) { q.Difficulty = "" }, ErrInvalidRaidDiff},
+	}
+	for _, tc := range cases {
+		q := ok
+		tc.mut(&q)
+		_, err := c.GetGuildBossKill(context.Background(), &q)
+		if !errors.Is(err, tc.want) {
+			t.Fatalf("%+v: got %v want %v", q, err, tc.want)
 		}
 	}
-	return false
 }
 
 func TestGetBossRankings(t *testing.T) {
-	testCases := []struct {
-		timeout        bool
-		raidSlug       string
-		bossSlug       string
-		difficulty     raiderio.RaidDifficulty
-		region         raiderio.Region
-		realm          string
-		expectedErrMsg string
-	}{
-		{raidSlug: "nerubar-palace", bossSlug: "queen-ansurek", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US},
-		{raidSlug: "nerubar-palace", bossSlug: "queen-ansurek", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, realm: "illidan"},
-		{raidSlug: "", bossSlug: "queen-ansurek", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, expectedErrMsg: "invalid raid name"},
-		{raidSlug: "nerubar-palace", bossSlug: "", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, expectedErrMsg: "invalid boss"},
-		{raidSlug: "nerubar-palace", bossSlug: "queen-ansurek", difficulty: "", region: raiderio.US, expectedErrMsg: "invalid raid difficulty"},
-		{raidSlug: "nerubar-palace", bossSlug: "queen-ansurek", difficulty: raiderio.MYTHIC_RAID, region: "", expectedErrMsg: "invalid region"},
-		{timeout: true, raidSlug: "nerubar-palace", bossSlug: "queen-ansurek", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, expectedErrMsg: "raiderio api request timeout"},
+	var path string
+	var q url.Values
+	c := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+		path = r.URL.Path
+		q = r.URL.Query()
+		w.Write(testdata(t, "boss_rankings.json"))
+	})
+
+	got, err := c.GetBossRankings(context.Background(), &BossRankingsQuery{
+		RaidSlug: "nerubar-palace", BossSlug: "queen-ansurek",
+		Difficulty: MYTHIC_RAID, Region: US, Realm: "illidan",
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
+	if path != "/raiding/boss-rankings" {
+		t.Fatalf("path %s", path)
+	}
+	if q.Get("raid") != "nerubar-palace" || q.Get("boss") != "queen-ansurek" || q.Get("realm") != "illidan" {
+		t.Fatalf("query %v", q)
+	}
+	if len(got.BossRankings) == 0 {
+		t.Fatal("empty rankings")
+	}
+}
 
-	for _, tc := range testCases {
-		ctx, cancel := testCtx(tc.timeout)
-		defer cancel()
-
-		rankings, err := c.GetBossRankings(ctx, &raiderio.BossRankingsQuery{
-			RaidSlug:   tc.raidSlug,
-			BossSlug:   tc.bossSlug,
-			Difficulty: tc.difficulty,
-			Region:     tc.region,
-			Realm:      tc.realm,
-		})
-
-		if err != nil && err.Error() != tc.expectedErrMsg {
-			t.Fatalf("expected error: %v, got: %v", tc.expectedErrMsg, err.Error())
-		}
-
-		if err == nil {
-			if len(rankings.BossRankings) == 0 {
-				t.Fatalf("expected boss rankings to not be empty")
-			}
+func TestGetBossRankings_validate(t *testing.T) {
+	c := mustNotHit(t)
+	cases := []struct {
+		q    BossRankingsQuery
+		want error
+	}{
+		{BossRankingsQuery{BossSlug: "x", Difficulty: MYTHIC_RAID, Region: US}, ErrInvalidRaidName},
+		{BossRankingsQuery{RaidSlug: "x", Difficulty: MYTHIC_RAID, Region: US}, ErrInvalidBoss},
+		{BossRankingsQuery{RaidSlug: "x", BossSlug: "y", Region: US}, ErrInvalidRaidDiff},
+		{BossRankingsQuery{RaidSlug: "x", BossSlug: "y", Difficulty: MYTHIC_RAID}, ErrInvalidRegion},
+	}
+	for _, tc := range cases {
+		_, err := c.GetBossRankings(context.Background(), &tc.q)
+		if !errors.Is(err, tc.want) {
+			t.Fatalf("%+v: got %v want %v", tc.q, err, tc.want)
 		}
 	}
 }
 
 func TestGetHallOfFame(t *testing.T) {
-	// Create a client without access key
-	noAuthClient := raiderio.NewClient()
+	var path string
+	c := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+		path = r.URL.Path
+		w.Write(testdata(t, "hall_of_fame.json"))
+	})
 
-	testCases := []struct {
-		timeout        bool
-		raidSlug       string
-		difficulty     raiderio.RaidDifficulty
-		region         raiderio.Region
-		expectedErrMsg string
-	}{
-		{raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US},
-		{raidSlug: "", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, expectedErrMsg: "invalid raid name"},
-		{raidSlug: "nerubar-palace", difficulty: "", region: raiderio.US, expectedErrMsg: "invalid raid difficulty"},
-		{raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: "", expectedErrMsg: "invalid region"},
-		{timeout: true, raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, expectedErrMsg: "raiderio api request timeout"},
+	got, err := c.GetHallOfFame(context.Background(), &RaidQuery{
+		Slug: "nerubar-palace", Difficulty: MYTHIC_RAID, Region: US,
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
-
-	for _, tc := range testCases {
-		ctx, cancel := testCtx(tc.timeout)
-		defer cancel()
-
-		hof, err := noAuthClient.GetHallOfFame(ctx, &raiderio.RaidQuery{
-			Slug:       tc.raidSlug,
-			Difficulty: tc.difficulty,
-			Region:     tc.region,
-		})
-
-		if err != nil && err.Error() != tc.expectedErrMsg {
-			t.Fatalf("expected error: %v, got: %v", tc.expectedErrMsg, err.Error())
-		}
-
-		if err == nil {
-			if len(hof.HallOfFame.BossKills) == 0 {
-				t.Fatalf("expected hall of fame to not be empty")
-			}
-		}
+	if path != "/raiding/hall-of-fame" {
+		t.Fatalf("path %s", path)
+	}
+	if len(got.HallOfFame.BossKills) == 0 {
+		t.Fatal("empty hall of fame")
 	}
 }
 
 func TestGetRaidProgression(t *testing.T) {
-	// Create a client without access key to test if that's the issue
-	noAuthClient := raiderio.NewClient()
+	var path string
+	c := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+		path = r.URL.Path
+		w.Write(testdata(t, "raid_progression.json"))
+	})
 
-	testCases := []struct {
-		timeout        bool
-		raidSlug       string
-		difficulty     raiderio.RaidDifficulty
-		region         raiderio.Region
-		expectedErrMsg string
-	}{
-		{raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US},
-		{raidSlug: "", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, expectedErrMsg: "invalid raid name"},
-		{raidSlug: "nerubar-palace", difficulty: "", region: raiderio.US, expectedErrMsg: "invalid raid difficulty"},
-		{raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: "", expectedErrMsg: "invalid region"},
-		{timeout: true, raidSlug: "nerubar-palace", difficulty: raiderio.MYTHIC_RAID, region: raiderio.US, expectedErrMsg: "raiderio api request timeout"},
+	got, err := c.GetRaidProgression(context.Background(), &RaidQuery{
+		Slug: "nerubar-palace", Difficulty: MYTHIC_RAID, Region: US,
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
+	if path != "/raiding/progression" {
+		t.Fatalf("path %s", path)
+	}
+	if len(got.Progression) == 0 {
+		t.Fatal("empty progression")
+	}
+}
 
-	for _, tc := range testCases {
-		ctx, cancel := testCtx(tc.timeout)
-		defer cancel()
-
-		prog, err := noAuthClient.GetRaidProgression(ctx, &raiderio.RaidQuery{
-			Slug:       tc.raidSlug,
-			Difficulty: tc.difficulty,
-			Region:     tc.region,
-		})
-
-		if err != nil && err.Error() != tc.expectedErrMsg {
-			t.Fatalf("expected error: %v, got: %v", tc.expectedErrMsg, err.Error())
-		}
-
-		if err == nil {
-			if len(prog.Progression) == 0 {
-				t.Fatalf("expected raid progression to not be empty")
-			}
+func TestValidateRaidQuery(t *testing.T) {
+	c := mustNotHit(t)
+	cases := []struct {
+		q    RaidQuery
+		want error
+	}{
+		{RaidQuery{Difficulty: MYTHIC_RAID, Region: US}, ErrInvalidRaidName},
+		{RaidQuery{Slug: "x", Region: US}, ErrInvalidRaidDiff},
+		{RaidQuery{Slug: "x", Difficulty: MYTHIC_RAID}, ErrInvalidRegion},
+	}
+	for _, tc := range cases {
+		_, err := c.GetHallOfFame(context.Background(), &tc.q)
+		if !errors.Is(err, tc.want) {
+			t.Fatalf("%+v: got %v want %v", tc.q, err, tc.want)
 		}
 	}
 }
