@@ -168,7 +168,19 @@ const (
 // which were present for the first kill
 type BossKill struct {
 	Kill   BossKillData
-	Roster []Character
+	Roster []RosterCharacter
+}
+
+// RosterCharacter is a boss-kill roster member. Profile uses Character;
+// the two payloads do not share a spec field.
+type RosterCharacter struct {
+	Name          string
+	Class         string
+	Spec          string
+	Realm         string
+	Region        string
+	TalentLoadout TalentLoadout
+	Gear          Gear
 }
 
 // BossKillData provides metadata for the guilds first boss kill
@@ -183,11 +195,7 @@ type BossKillData struct {
 	ItemLevelEquippedMin float32       `json:"itemLevelEquippedMin"`
 }
 
-// The following two structs are unexported, for use within the package
-// to convert the ugly incoming boss-kill roster into standard "Character"
-// types. I couldnt think of a better way to covert the incoming json to
-// a standardized object, without exporting the ugly structs to the client
-// Hopefully this is fixed in json/2
+// Unexported wire types for /guilds/boss-kill. Mapped to RosterCharacter.
 type bossKillResp struct {
 	Kill struct {
 		PulledAt             time.Time `json:"pulledAt"`
@@ -260,25 +268,23 @@ func unmarshalGuildBossKill(b []byte) (*BossKill, error) {
 	return &k, nil
 }
 
-func unmarshalBossKillRoster(k *bossKillResp) []Character {
-	var chars []Character
+func unmarshalBossKillRoster(k *bossKillResp) []RosterCharacter {
+	var chars []RosterCharacter
 	for _, c := range k.Roster {
-		g := Gear{
-			ItemLevelEquipped: int(c.Character.ItemLevelEquipped),
-		}
-		tl := TalentLoadout{
-			LoadoutText: c.Character.TalentLoadout.LoadoutText,
-		}
-		char := Character{
-			Name:          c.Character.Name,
-			Class:         c.Character.Class.Slug,
-			Spec:          c.Character.Spec.Slug,
-			Realm:         c.Character.Realm.Slug,
-			Region:        c.Character.Region.Slug,
-			TalentLoadout: tl,
-			Gear:          g,
-		}
-		chars = append(chars, char)
+		chars = append(chars, RosterCharacter{
+			Name:   c.Character.Name,
+			Class:  c.Character.Class.Slug,
+			Spec:   c.Character.Spec.Slug,
+			Realm:  c.Character.Realm.Slug,
+			Region: c.Character.Region.Slug,
+			TalentLoadout: TalentLoadout{
+				LoadoutSpecID: c.Character.TalentLoadout.LoadoutSpecID,
+				LoadoutText:   c.Character.TalentLoadout.LoadoutText,
+			},
+			Gear: Gear{
+				ItemLevelEquipped: int(c.Character.ItemLevelEquipped),
+			},
+		})
 	}
 	return chars
 }

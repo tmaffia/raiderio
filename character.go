@@ -23,7 +23,6 @@ type Character struct {
 	ActiveRole        string        `json:"active_spec_role"`
 	Gender            string        `json:"gender"`
 	Faction           string        `json:"faction"`
-	Spec              string        `json:"spec"`
 	AchievementPoints int64         `json:"achievement_points"`
 	HonorableKills    int64         `json:"honorable_kills"`
 	ThumbnailUrl      string        `json:"thumbnail_url"`

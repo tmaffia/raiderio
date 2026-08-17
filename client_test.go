@@ -68,7 +68,7 @@ func TestGetCharacter(t *testing.T) {
 	p, err := c.GetCharacter(context.Background(), &CharacterQuery{
 		Region: US, Realm: "illidan", Name: "highervalue",
 	})
-	if err != nil || p.Name != "Highervalue" {
+	if err != nil || p.Name != "Highervalue" || p.ActiveSpec != "Fury" || p.ActiveRole != "DPS" {
 		t.Fatalf("got %+v err %v", p, err)
 	}
 	if !p.LastCrawledAt.Equal(time.Date(2026, 8, 16, 20, 14, 52, 0, time.UTC)) {

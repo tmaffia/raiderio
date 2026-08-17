@@ -35,6 +35,7 @@ func TestUnmarshalGuildBossKill(t *testing.T) {
 	c := k.Roster[0]
 	if c.Name != "Drbananaphd" || c.Class != "monk" || c.Spec != "windwalker" ||
 		c.Realm != "illidan" || c.Region != "us" ||
+		c.TalentLoadout.LoadoutSpecID != 269 ||
 		c.TalentLoadout.LoadoutText != "B0QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAESkkEtISEAAAAQikkAIJJJJpIpEiQASSSSaJBOAAA" ||
 		c.Gear.ItemLevelEquipped != 401 {
 		t.Fatalf("char %+v", c)
