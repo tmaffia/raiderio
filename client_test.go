@@ -68,7 +68,7 @@ func TestGetCharacter(t *testing.T) {
 	p, err := c.GetCharacter(context.Background(), &CharacterQuery{
 		Region: US, Realm: "illidan", Name: "highervalue",
 	})
-	if err != nil || p.Name != "Highervalue" {
+	if err != nil || p.Name != "Highervalue" || p.ActiveSpec != "Fury" || p.ActiveRole != "DPS" {
 		t.Fatalf("got %+v err %v", p, err)
 	}
 	if path != "/characters/profile" {
