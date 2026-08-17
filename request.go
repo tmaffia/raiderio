@@ -15,22 +15,14 @@ type apiErrorResponse struct {
 	Message    string `json:"message"`
 }
 
-// getAPIResponse is a helper function that makes a GET request to the Raider.IO API
-// It returns an error if the API returns a non-200 status code, or if the
-// response body cannot be read
-// Returns the error message from the api back to the client method that calls it,
-// so in cases where the realm or the character name cannot be found, developer is presented
-// with that error state.
-func (c *Client) getAPIResponse(ctx context.Context, reqUrl string) ([]byte, error) {
+func (c *Client) getAPIResponse(ctx context.Context, path string, params url.Values) ([]byte, error) {
 	if c.AccessKey != "" {
-		u, err := url.Parse(reqUrl)
-		if err != nil {
-			return nil, errors.New("error parsing request URL")
-		}
-		q := u.Query()
-		q.Set("access_key", c.AccessKey)
-		u.RawQuery = q.Encode()
-		reqUrl = u.String()
+		params.Set("access_key", c.AccessKey)
+	}
+
+	reqUrl := c.ApiUrl + path
+	if q := params.Encode(); q != "" {
+		reqUrl += "?" + q
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqUrl, nil)
@@ -42,26 +34,32 @@ func (c *Client) getAPIResponse(ctx context.Context, reqUrl string) ([]byte, err
 	if err != nil {
 		return nil, wrapHttpError(err)
 	}
+	defer resp.Body.Close()
 
-	var body []byte
-	body, err = io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.New("error reading response body")
 	}
 
-	// If not 200, api is returning an error state
 	if resp.StatusCode != 200 {
 		var responseBody apiErrorResponse
-		err = json.Unmarshal(body, &responseBody)
-		// unmarshal error implies response is in an incorrect format
-		// instead of api message, return http status
-		if err != nil {
+		if err = json.Unmarshal(body, &responseBody); err != nil {
 			return nil, wrapApiError(&responseBody)
 		}
-
-		// return error with message directly from the api
 		return nil, wrapApiError(&responseBody)
 	}
 
 	return body, nil
+}
+
+func getJSON[T any](c *Client, ctx context.Context, path string, params url.Values) (*T, error) {
+	body, err := c.getAPIResponse(ctx, path, params)
+	if err != nil {
+		return nil, err
+	}
+	var v T
+	if err := json.Unmarshal(body, &v); err != nil {
+		return nil, errors.New("error unmarshalling response")
+	}
+	return &v, nil
 }

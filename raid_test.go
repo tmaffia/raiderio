@@ -17,7 +17,9 @@ func TestGetRaidBySlug(t *testing.T) {
 		{slug: "nerubar-palaceinvalid raid slug", expectedErrMsg: "invalid raid"},
 	}
 
-	raids, err := c.GetRaids(defaultCtx, expansions.WAR_WITHIN)
+	ctx, cancel := ctx()
+	defer cancel()
+	raids, err := c.GetRaids(ctx, expansions.WAR_WITHIN)
 	if err != nil {
 		t.Fatalf("Error getting raids: %v", err)
 	}

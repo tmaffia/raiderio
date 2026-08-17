@@ -2,11 +2,9 @@ package raiderio
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/tmaffia/raiderio/expansions"
@@ -49,64 +47,47 @@ func NewClient(opts ...ClientOption) *Client {
 // It returns an error if the API returns a non-200 status code, or if the
 // response body cannot be read or mapped to the CharacterProfile struct
 func (c *Client) GetCharacter(ctx context.Context, cq *CharacterQuery) (*Character, error) {
-	err := validateCharacterQuery(cq)
-	if err != nil {
+	if err := validateCharacterQuery(cq); err != nil {
 		return nil, err
 	}
 
-	params := url.Values{}
-	params.Add("region", cq.Region.Slug)
-	params.Add("realm", cq.Realm)
-	params.Add("name", cq.Name)
+	params := url.Values{
+		"region": {cq.Region.Slug},
+		"realm":  {cq.Realm},
+		"name":   {cq.Name},
+	}
 	if len(cq.fields) > 0 {
-		params.Add("fields", strings.Join(cq.fields, ","))
+		params.Set("fields", strings.Join(cq.fields, ","))
 	}
 
-	reqUrl := fmt.Sprintf("%s/characters/profile?%s", c.ApiUrl, params.Encode())
-
-	body, err := c.getAPIResponse(ctx, reqUrl)
-	if err != nil {
-		return nil, err
-	}
-
-	var profile Character
-	err = json.Unmarshal(body, &profile)
-	if err != nil {
-		return nil, errors.New("error unmarshalling character profile")
-	}
-
-	return &profile, nil
+	return getJSON[Character](c, ctx, "/characters/profile", params)
 }
 
 // GetGuild retrieves a guild profile from the Raider.IO API
 // It returns an error if the API returns a non-200 status code, or if the
 // response body cannot be read or mapped to the GuildProfile struct
 func (c *Client) GetGuild(ctx context.Context, gq *GuildQuery) (*Guild, error) {
-	err := createGuildQuery(gq)
-	if err != nil {
+	if err := createGuildQuery(gq); err != nil {
 		return nil, err
 	}
 
-	params := url.Values{}
-	params.Add("region", gq.Region.Slug)
-	params.Add("realm", gq.Realm)
-	params.Add("name", gq.Name)
+	params := url.Values{
+		"region": {gq.Region.Slug},
+		"realm":  {gq.Realm},
+		"name":   {gq.Name},
+	}
 	if len(gq.fields) > 0 {
-		params.Add("fields", strings.Join(gq.fields, ","))
+		params.Set("fields", strings.Join(gq.fields, ","))
 	}
 
-	reqUrl := fmt.Sprintf("%s/guilds/profile?%s", c.ApiUrl, params.Encode())
-
-	body, err := c.getAPIResponse(ctx, reqUrl)
+	profile, err := getJSON[Guild](c, ctx, "/guilds/profile", params)
 	if err != nil {
 		return nil, err
 	}
-
-	profile, err := unmarshalGuild(body)
-	if err != nil {
-		return nil, err
+	for k, entry := range profile.RaidRankings {
+		entry.RaidSlug = k
+		profile.RaidRankings[k] = entry
 	}
-
 	return profile, nil
 }
 
@@ -115,21 +96,8 @@ func (c *Client) GetGuild(ctx context.Context, gq *GuildQuery) (*Guild, error) {
 // response body cannot be read or mapped to the Raids struct
 // Takes an Expansion enum as a parameter, in addition to context.Context
 func (c *Client) GetRaids(ctx context.Context, e expansions.Expansion) (*Raids, error) {
-	params := url.Values{}
-	params.Add("expansion_id", fmt.Sprintf("%d", e))
-	reqUrl := fmt.Sprintf("%s/raiding/static-data?%s", c.ApiUrl, params.Encode())
-	body, err := c.getAPIResponse(ctx, reqUrl)
-	if err != nil {
-		return nil, err
-	}
-
-	var raids Raids
-	err = json.Unmarshal(body, &raids)
-	if err != nil {
-		return nil, errors.New("error unmarshalling raids")
-	}
-
-	return &raids, nil
+	params := url.Values{"expansion_id": {strconv.Itoa(int(e))}}
+	return getJSON[Raids](c, ctx, "/raiding/static-data", params)
 }
 
 // GetRaidRankings retrieves a list of raid rankings from the Raider.IO API
@@ -137,42 +105,26 @@ func (c *Client) GetRaids(ctx context.Context, e expansions.Expansion) (*Raids, 
 // response body cannot be read or mapped to the RaidRankings struct
 // Takes a RaidQuery struct as a parameter, in addition to context.Context
 func (c *Client) GetRaidRankings(ctx context.Context, rq *RaidQuery) (*RaidRankings, error) {
-	err := validateRaidRankingsQuery(rq)
-	if err != nil {
+	if err := validateRaidRankingsQuery(rq); err != nil {
 		return nil, err
 	}
 
-	params := url.Values{}
-	params.Add("raid", rq.Slug)
-	params.Add("difficulty", string(rq.Difficulty))
-	params.Add("region", rq.Region.Slug)
-
+	params := url.Values{
+		"raid":       {rq.Slug},
+		"difficulty": {string(rq.Difficulty)},
+		"region":     {rq.Region.Slug},
+	}
 	if rq.Realm != "" {
-		params.Add("realm", rq.Realm)
+		params.Set("realm", rq.Realm)
 	}
-
 	if rq.Limit != 0 {
-		params.Add("limit", fmt.Sprintf("%d", rq.Limit))
+		params.Set("limit", strconv.Itoa(rq.Limit))
 	}
-
 	if rq.Page != 0 {
-		params.Add("page", fmt.Sprintf("%d", rq.Page))
+		params.Set("page", strconv.Itoa(rq.Page))
 	}
 
-	reqUrl := fmt.Sprintf("%s/raiding/raid-rankings?%s", c.ApiUrl, params.Encode())
-
-	body, err := c.getAPIResponse(ctx, reqUrl)
-	if err != nil {
-		return nil, err
-	}
-
-	var rankings RaidRankings
-	err = json.Unmarshal(body, &rankings)
-	if err != nil {
-		return nil, errors.New("error unmarshalling raid rankings")
-	}
-
-	return &rankings, nil
+	return getJSON[RaidRankings](c, ctx, "/raiding/raid-rankings", params)
 }
 
 // GetGuildBossKill returns a guild's first kill of a given boss
@@ -180,117 +132,71 @@ func (c *Client) GetRaidRankings(ctx context.Context, rq *RaidQuery) (*RaidRanki
 // GuildBossKillQuery has only required fields for this request
 // returns a BossKill object
 func (c *Client) GetGuildBossKill(ctx context.Context, q *GuildBossKillQuery) (*BossKill, error) {
-	err := validateGuildBossKillQuery(q)
-	if err != nil {
-		return nil, err
-	}
-	params := url.Values{}
-	params.Add("raid", q.RaidSlug)
-	params.Add("difficulty", string(q.Difficulty))
-	params.Add("region", q.Region.Slug)
-	params.Add("realm", q.Realm)
-	params.Add("guild", q.GuildName)
-	params.Add("boss", q.BossSlug)
-
-	reqUrl := fmt.Sprintf("%s/guilds/boss-kill?%s", c.ApiUrl, params.Encode())
-
-	body, err := c.getAPIResponse(ctx, reqUrl)
-	if err != nil {
+	if err := validateGuildBossKillQuery(q); err != nil {
 		return nil, err
 	}
 
-	k, err := unmarshalGuildBossKill(body)
+	params := url.Values{
+		"raid":       {q.RaidSlug},
+		"difficulty": {string(q.Difficulty)},
+		"region":     {q.Region.Slug},
+		"realm":      {q.Realm},
+		"guild":      {q.GuildName},
+		"boss":       {q.BossSlug},
+	}
+
+	body, err := c.getAPIResponse(ctx, "/guilds/boss-kill", params)
 	if err != nil {
 		return nil, err
 	}
-
-	return k, nil
+	return unmarshalGuildBossKill(body)
 }
 
 // GetBossRankings retrieves the boss rankings for a given raid and boss
 func (c *Client) GetBossRankings(ctx context.Context, q *BossRankingsQuery) (*BossRankings, error) {
-	err := validateBossRankingsQuery(q)
-	if err != nil {
+	if err := validateBossRankingsQuery(q); err != nil {
 		return nil, err
 	}
 
-	params := url.Values{}
-	params.Add("raid", q.RaidSlug)
-	params.Add("boss", q.BossSlug)
-	params.Add("difficulty", string(q.Difficulty))
-	params.Add("region", q.Region.Slug)
+	params := url.Values{
+		"raid":       {q.RaidSlug},
+		"boss":       {q.BossSlug},
+		"difficulty": {string(q.Difficulty)},
+		"region":     {q.Region.Slug},
+	}
 	if q.Realm != "" {
-		params.Add("realm", q.Realm)
+		params.Set("realm", q.Realm)
 	}
 
-	reqUrl := fmt.Sprintf("%s/raiding/boss-rankings?%s", c.ApiUrl, params.Encode())
-
-	body, err := c.getAPIResponse(ctx, reqUrl)
-	if err != nil {
-		return nil, err
-	}
-
-	var rankings BossRankings
-	err = json.Unmarshal(body, &rankings)
-	if err != nil {
-		return nil, errors.New("error unmarshalling boss rankings")
-	}
-
-	return &rankings, nil
+	return getJSON[BossRankings](c, ctx, "/raiding/boss-rankings", params)
 }
 
 // GetHallOfFame retrieves the hall of fame for a given raid
 func (c *Client) GetHallOfFame(ctx context.Context, q *HallOfFameQuery) (*HallOfFame, error) {
-	err := validateHallOfFameQuery(q)
-	if err != nil {
+	if err := validateHallOfFameQuery(q); err != nil {
 		return nil, err
 	}
 
-	params := url.Values{}
-	params.Add("raid", q.RaidSlug)
-	params.Add("difficulty", string(q.Difficulty))
-	params.Add("region", q.Region.Slug)
-
-	reqUrl := fmt.Sprintf("%s/raiding/hall-of-fame?%s", c.ApiUrl, params.Encode())
-
-	body, err := c.getAPIResponse(ctx, reqUrl)
-	if err != nil {
-		return nil, err
+	params := url.Values{
+		"raid":       {q.RaidSlug},
+		"difficulty": {string(q.Difficulty)},
+		"region":     {q.Region.Slug},
 	}
 
-	var hof HallOfFame
-	err = json.Unmarshal(body, &hof)
-	if err != nil {
-		return nil, errors.New("error unmarshalling hall of fame")
-	}
-
-	return &hof, nil
+	return getJSON[HallOfFame](c, ctx, "/raiding/hall-of-fame", params)
 }
 
 // GetRaidProgression retrieves the raid progression for a given raid
 func (c *Client) GetRaidProgression(ctx context.Context, q *RaidProgressionQuery) (*RaidProgressionResponse, error) {
-	err := validateRaidProgressionQuery(q)
-	if err != nil {
+	if err := validateRaidProgressionQuery(q); err != nil {
 		return nil, err
 	}
 
-	params := url.Values{}
-	params.Add("raid", q.RaidSlug)
-	params.Add("difficulty", string(q.Difficulty))
-	params.Add("region", q.Region.Slug)
-
-	reqUrl := fmt.Sprintf("%s/raiding/progression?%s", c.ApiUrl, params.Encode())
-
-	body, err := c.getAPIResponse(ctx, reqUrl)
-	if err != nil {
-		return nil, err
+	params := url.Values{
+		"raid":       {q.RaidSlug},
+		"difficulty": {string(q.Difficulty)},
+		"region":     {q.Region.Slug},
 	}
 
-	var prog RaidProgressionResponse
-	err = json.Unmarshal(body, &prog)
-	if err != nil {
-		return nil, errors.New("error unmarshalling raid progression")
-	}
-
-	return &prog, nil
+	return getJSON[RaidProgressionResponse](c, ctx, "/raiding/progression", params)
 }

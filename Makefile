@@ -1,10 +1,7 @@
-.PHONY: test lint setup
+.PHONY: test lint
 
 test:
 	go test -v ./...
 
 lint:
-	go run -modfile=tools/go.mod github.com/golangci/golangci-lint/cmd/golangci-lint run ./...
-
-setup:
-	cd tools && go mod tidy
+	go tool -modfile=tools/go.mod golangci-lint run ./...

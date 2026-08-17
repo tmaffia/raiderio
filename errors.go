@@ -61,6 +61,10 @@ func wrapApiError(responseBody *apiErrorResponse) error {
 		return ErrInvalidRaid
 	}
 
+	if strings.Contains(responseBody.Message, "Invalid request query input") {
+		return ErrInvalidQuery
+	}
+
 	return ErrUnexpected
 }
 
