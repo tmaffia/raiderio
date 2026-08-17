@@ -25,6 +25,10 @@ func TestUnmarshalGuildBossKill(t *testing.T) {
 	if !k.Kill.IsSuccess || k.Kill.Duration != 396990*time.Millisecond {
 		t.Fatalf("kill %+v", k.Kill)
 	}
+	if !k.Kill.PulledAt.Equal(time.Date(2022, 12, 27, 5, 17, 25, 488000000, time.UTC)) ||
+		!k.Kill.DefeatedAt.Equal(time.Date(2022, 12, 27, 5, 24, 2, 478000000, time.UTC)) {
+		t.Fatalf("kill times %+v", k.Kill)
+	}
 	if len(k.Roster) != 1 {
 		t.Fatalf("roster %d", len(k.Roster))
 	}

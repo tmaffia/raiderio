@@ -71,6 +71,9 @@ func TestGetCharacter(t *testing.T) {
 	if err != nil || p.Name != "Highervalue" {
 		t.Fatalf("got %+v err %v", p, err)
 	}
+	if !p.LastCrawledAt.Equal(time.Date(2026, 8, 16, 20, 14, 52, 0, time.UTC)) {
+		t.Fatalf("LastCrawledAt %v", p.LastCrawledAt)
+	}
 	if path != "/characters/profile" {
 		t.Fatalf("path %s", path)
 	}
@@ -87,6 +90,9 @@ func TestGetCharacter(t *testing.T) {
 	}
 	if p.Gear.ItemLevelEquipped <= 0 || p.TalentLoadout.LoadoutText == "" {
 		t.Fatalf("got %+v", p)
+	}
+	if !p.Gear.UpdatedAt.Equal(time.Date(2026, 8, 14, 18, 35, 59, 318000000, time.UTC)) {
+		t.Fatalf("UpdatedAt %v", p.Gear.UpdatedAt)
 	}
 }
 
@@ -131,6 +137,9 @@ func TestGetGuild(t *testing.T) {
 	}
 	if g.Name != "Warpath" || len(g.Members) == 0 {
 		t.Fatalf("got %+v", g)
+	}
+	if !g.LastCrawledAt.Equal(time.Date(2026, 8, 10, 9, 8, 36, 0, time.UTC)) {
+		t.Fatalf("LastCrawledAt %v", g.LastCrawledAt)
 	}
 	if g.RaidProgression["tier-mn-1"].Summary != "9/9 M" {
 		t.Fatalf("progression %+v", g.RaidProgression)
@@ -177,6 +186,10 @@ func TestGetRaids(t *testing.T) {
 	if err != nil || r.Name != "Nerub-ar Palace" {
 		t.Fatalf("got %+v err %v", r, err)
 	}
+	if !r.Starts.Us.Equal(time.Date(2024, 9, 10, 15, 0, 0, 0, time.UTC)) ||
+		!r.Ends.Us.Equal(time.Date(2025, 3, 4, 15, 0, 0, 0, time.UTC)) {
+		t.Fatalf("starts/ends %+v %+v", r.Starts, r.Ends)
+	}
 }
 
 func TestGetRaidRankings(t *testing.T) {
@@ -205,6 +218,15 @@ func TestGetRaidRankings(t *testing.T) {
 	}
 	if len(got.RaidRanking) != 1 || got.RaidRanking[0].Guild.Name != "Liquid" {
 		t.Fatalf("got %+v", got)
+	}
+	e := got.RaidRanking[0].EncountersDefeated[0]
+	if !e.FirstDefeated.Equal(time.Date(2024, 9, 17, 22, 4, 0, 0, time.UTC)) ||
+		!e.LastDefeatedAt.Equal(time.Date(2025, 3, 4, 1, 5, 21, 0, time.UTC)) {
+		t.Fatalf("defeated %+v", e)
+	}
+	pull := got.RaidRanking[0].EncountersPulled[0]
+	if !pull.PullsStartedAt.Equal(time.Date(2024, 9, 17, 21, 57, 15, 0, time.UTC)) {
+		t.Fatalf("pullStartedAt %v", pull.PullsStartedAt)
 	}
 }
 
@@ -258,6 +280,10 @@ func TestGetGuildBossKill(t *testing.T) {
 	}
 	if k.Kill.Duration != 396990*time.Millisecond || !k.Kill.IsSuccess {
 		t.Fatalf("kill %+v", k.Kill)
+	}
+	if !k.Kill.PulledAt.Equal(time.Date(2022, 12, 27, 5, 17, 25, 488000000, time.UTC)) ||
+		!k.Kill.DefeatedAt.Equal(time.Date(2022, 12, 27, 5, 24, 2, 478000000, time.UTC)) {
+		t.Fatalf("kill times %+v", k.Kill)
 	}
 }
 
@@ -313,6 +339,11 @@ func TestGetBossRankings(t *testing.T) {
 	if len(got.BossRankings) == 0 {
 		t.Fatal("empty rankings")
 	}
+	e := got.BossRankings[0].EncountersDefeated[0]
+	if !e.FirstDefeated.Equal(time.Date(2024, 9, 29, 7, 2, 27, 0, time.UTC)) ||
+		!e.LastDefeated.Equal(time.Date(2024, 9, 29, 7, 2, 27, 0, time.UTC)) {
+		t.Fatalf("defeated %+v", e)
+	}
 }
 
 func TestGetBossRankings_validate(t *testing.T) {
@@ -353,6 +384,9 @@ func TestGetHallOfFame(t *testing.T) {
 	if len(got.HallOfFame.BossKills) == 0 {
 		t.Fatal("empty hall of fame")
 	}
+	if !got.HallOfFame.BossKills[0].DefeatedBy.Guilds[0].DefeatedAt.Equal(time.Date(2024, 9, 17, 19, 12, 4, 0, time.UTC)) {
+		t.Fatalf("defeatedAt %v", got.HallOfFame.BossKills[0].DefeatedBy.Guilds[0].DefeatedAt)
+	}
 }
 
 func TestGetRaidProgression(t *testing.T) {
@@ -373,6 +407,9 @@ func TestGetRaidProgression(t *testing.T) {
 	}
 	if len(got.Progression) == 0 {
 		t.Fatal("empty progression")
+	}
+	if !got.Progression[0].Guilds[0].DefeatedAt.Equal(time.Date(2024, 11, 23, 8, 0, 7, 0, time.UTC)) {
+		t.Fatalf("defeatedAt %v", got.Progression[0].Guilds[0].DefeatedAt)
 	}
 }
 
