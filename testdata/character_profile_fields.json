@@ -1,0 +1,260 @@
+{
+  "name": "Highervalue",
+  "race": "Dwarf",
+  "class": "Warrior",
+  "active_spec_name": "Fury",
+  "active_spec_role": "DPS",
+  "gender": "male",
+  "faction": "alliance",
+  "achievement_points": 27870,
+  "thumbnail_url": "https://render.worldofwarcraft.com/us/character/illidan/142/226602894-avatar.jpg?alt=/wow/static/images/2d/avatar/3-0.jpg",
+  "region": "us",
+  "realm": "Illidan",
+  "last_crawled_at": "2026-08-16T20:14:52.000Z",
+  "profile_url": "https://raider.io/characters/us/illidan/Highervalue",
+  "profile_banner": "alliancebanner1",
+  "guild": {
+    "name": "Endless Climb",
+    "realm": "Illidan"
+  },
+  "raid_progression": {
+    "tier-mn-1": {
+      "summary": "5/9 M",
+      "expansion_id": 11,
+      "total_bosses": 9,
+      "normal_bosses_killed": 2,
+      "heroic_bosses_killed": 7,
+      "mythic_bosses_killed": 5
+    }
+  },
+  "mythic_plus_scores_by_season": [
+    {
+      "season": "season-mn-1",
+      "scores": {
+        "all": 3179.7,
+        "dps": 3142.6,
+        "healer": 0,
+        "tank": 2720.2,
+        "spec_0": 3142.6,
+        "spec_1": 0,
+        "spec_2": 2720.2,
+        "spec_3": 0
+      },
+      "segments": {
+        "all": {
+          "score": 3179.7,
+          "color": "#5565e2"
+        },
+        "dps": {
+          "score": 3142.6,
+          "color": "#3b6bdf"
+        },
+        "healer": {
+          "score": 0,
+          "color": "#ffffff"
+        },
+        "tank": {
+          "score": 2720.2,
+          "color": "#5fb395"
+        },
+        "spec_0": {
+          "score": 3142.6,
+          "color": "#3b6bdf"
+        },
+        "spec_1": {
+          "score": 0,
+          "color": "#ffffff"
+        },
+        "spec_2": {
+          "score": 2720.2,
+          "color": "#5fb395"
+        },
+        "spec_3": {
+          "score": 0,
+          "color": "#ffffff"
+        }
+      }
+    }
+  ],
+  "mythic_plus_ranks": {
+    "overall": {
+      "world": 982962,
+      "region": 187318,
+      "realm": 19227
+    },
+    "class": {
+      "world": 53924,
+      "region": 10106,
+      "realm": 934
+    },
+    "dps": {
+      "world": 653923,
+      "region": 127228,
+      "realm": 12954
+    },
+    "spec_71": {
+      "world": 22061,
+      "region": 3819,
+      "realm": 454
+    }
+  },
+  "previous_mythic_plus_ranks": {
+    "overall": {
+      "world": 0,
+      "region": 0,
+      "realm": 0
+    }
+  },
+  "mythic_plus_recent_runs": [
+    {
+      "dungeon": "Nexus-Point Xenas",
+      "short_name": "NPX",
+      "mythic_level": 13,
+      "completed_at": "2026-06-19T00:57:50.000Z",
+      "clear_time_ms": 1454531,
+      "keystone_run_id": 36380621,
+      "par_time_ms": 1800999,
+      "num_keystone_upgrades": 1,
+      "map_challenge_mode_id": 559,
+      "zone_id": 16573,
+      "zone_expansion_id": 11,
+      "icon_url": "https://cdn.raiderio.net/images/wow/icons/large/inv_achievement_dungeon_voidscararena.jpg",
+      "background_image_url": "https://cdn.raiderio.net/images/dungeons/expansion11/base/nexuspoint-xenas.jpg",
+      "score": 387.2,
+      "url": "https://raider.io/mythic-plus-runs/season-mn-1/36380621-13-nexuspoint-xenas",
+      "role": "dps",
+      "affixes": [
+        {
+          "id": 10,
+          "name": "Fortified",
+          "description": "Non-boss enemies have 20% more health and inflict up to 20% increased damage.",
+          "icon": "ability_toughness",
+          "icon_url": "https://cdn.raiderio.net/images/wow/icons/large/ability_toughness.jpg",
+          "wowhead_url": "https://wowhead.com/affix=10"
+        }
+      ],
+      "spec": {
+        "id": 71,
+        "name": "Arms",
+        "slug": "arms",
+        "class_id": 1,
+        "role": "dps",
+        "is_melee": true,
+        "patch": "1.0.0",
+        "ordinal": 0
+      }
+    }
+  ],
+  "mythic_plus_best_runs": [
+    {
+      "dungeon": "Algeth'ar Academy",
+      "short_name": "AA",
+      "mythic_level": 16,
+      "completed_at": "2026-06-02T00:28:22.000Z",
+      "clear_time_ms": 1697846,
+      "keystone_run_id": 32365244,
+      "par_time_ms": 1860999,
+      "num_keystone_upgrades": 1,
+      "map_challenge_mode_id": 402,
+      "zone_id": 14032,
+      "zone_expansion_id": 9,
+      "icon_url": "https://cdn.raiderio.net/images/wow/icons/large/achievement_dungeon_dragonacademy.jpg",
+      "background_image_url": "https://cdn.raiderio.net/images/dungeons/expansion9/base/algethar-academy.jpg",
+      "score": 428.3,
+      "url": "https://raider.io/mythic-plus-runs/season-mn-1/32365244-16-algethar-academy",
+      "role": "dps",
+      "affixes": [
+        {
+          "id": 9,
+          "name": "Tyrannical",
+          "description": "Bosses have 25% more health. Bosses and their minions inflict up to 15% increased damage.",
+          "icon": "achievement_boss_archaedas",
+          "icon_url": "https://cdn.raiderio.net/images/wow/icons/large/achievement_boss_archaedas.jpg",
+          "wowhead_url": "https://wowhead.com/affix=9"
+        }
+      ],
+      "spec": {
+        "id": 71,
+        "name": "Arms",
+        "slug": "arms",
+        "class_id": 1,
+        "role": "dps",
+        "is_melee": true,
+        "patch": "1.0.0",
+        "ordinal": 0
+      }
+    }
+  ],
+  "mythic_plus_highest_level_runs": [
+    {
+      "dungeon": "Algeth'ar Academy",
+      "short_name": "AA",
+      "mythic_level": 16,
+      "completed_at": "2026-06-02T00:28:22.000Z",
+      "clear_time_ms": 1697846,
+      "keystone_run_id": 32365244,
+      "par_time_ms": 1860999,
+      "num_keystone_upgrades": 1,
+      "map_challenge_mode_id": 402,
+      "zone_id": 14032,
+      "zone_expansion_id": 9,
+      "icon_url": "https://cdn.raiderio.net/images/wow/icons/large/achievement_dungeon_dragonacademy.jpg",
+      "background_image_url": "https://cdn.raiderio.net/images/dungeons/expansion9/base/algethar-academy.jpg",
+      "score": 428.3,
+      "url": "https://raider.io/mythic-plus-runs/season-mn-1/32365244-16-algethar-academy",
+      "role": "dps",
+      "affixes": [
+        {
+          "id": 9,
+          "name": "Tyrannical",
+          "description": "Bosses have 25% more health. Bosses and their minions inflict up to 15% increased damage.",
+          "icon": "achievement_boss_archaedas",
+          "icon_url": "https://cdn.raiderio.net/images/wow/icons/large/achievement_boss_archaedas.jpg",
+          "wowhead_url": "https://wowhead.com/affix=9"
+        }
+      ],
+      "spec": {
+        "id": 71,
+        "name": "Arms",
+        "slug": "arms",
+        "class_id": 1,
+        "role": "dps",
+        "is_melee": true,
+        "patch": "1.0.0",
+        "ordinal": 0
+      }
+    }
+  ],
+  "mythic_plus_weekly_highest_level_runs": [],
+  "mythic_plus_previous_weekly_highest_level_runs": [],
+  "raid_achievement_meta": [
+    {
+      "tier": "tier21",
+      "completed_count": 3,
+      "total_count": 11,
+      "meta_achievement": {
+        "id": 11987,
+        "raid": "antorus-the-burning-throne"
+      },
+      "completed_achievements": [
+        {
+          "id": 11949,
+          "raid": "antorus-the-burning-throne",
+          "timestamp": "2026-06-02T03:36:00.000Z"
+        }
+      ],
+      "remaining_achievements": [
+        {
+          "id": 11930,
+          "raid": "antorus-the-burning-throne"
+        }
+      ]
+    }
+  ],
+  "raid_achievement_curve": [
+    {
+      "raid": "nerubar-palace",
+      "aotc": "2024-10-05T02:25:00.000Z"
+    }
+  ]
+}

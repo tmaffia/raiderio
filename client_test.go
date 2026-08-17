@@ -96,6 +96,73 @@ func TestGetCharacter(t *testing.T) {
 	}
 }
 
+func TestGetCharacter_optionalFields(t *testing.T) {
+	var fields string
+	c := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+		fields = r.URL.Query().Get("fields")
+		w.Write(testdata(t, "character_profile_fields.json"))
+	})
+
+	p, err := c.GetCharacter(context.Background(), &CharacterQuery{
+		Region: US, Realm: "illidan", Name: "highervalue",
+		Guild: true, RaidProgression: true,
+		MythicPlusScoresBySeason:                 []string{"current"},
+		MythicPlusRanks:                          true,
+		PreviousMythicPlusRanks:                  true,
+		MythicPlusRecentRuns:                     true,
+		MythicPlusBestRunsAll:                    true,
+		MythicPlusHighestLevelRuns:               true,
+		MythicPlusWeeklyHighestLevelRuns:         true,
+		MythicPlusPreviousWeeklyHighestLevelRuns: true,
+		RaidAchievementMeta:                      []string{"tier21"},
+		RaidAchievementCurve:                     []string{"nerubar-palace"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantFields := "guild,raid_progression,mythic_plus_scores_by_season:current,mythic_plus_ranks,previous_mythic_plus_ranks,mythic_plus_recent_runs,mythic_plus_best_runs:all,mythic_plus_highest_level_runs,mythic_plus_weekly_highest_level_runs,mythic_plus_previous_weekly_highest_level_runs,raid_achievement_meta:tier21,raid_achievement_curve:nerubar-palace"
+	if fields != wantFields {
+		t.Fatalf("fields %q", fields)
+	}
+	if p.Guild.Name != "Endless Climb" || p.Guild.Realm != "Illidan" {
+		t.Fatalf("guild %+v", p.Guild)
+	}
+	prog := p.RaidProgression["tier-mn-1"]
+	if prog.Summary != "5/9 M" || prog.ExpansionID != 11 || prog.MythicKills != 5 {
+		t.Fatalf("progression %+v", p.RaidProgression)
+	}
+	if len(p.MythicPlusScoresBySeason) != 1 || p.MythicPlusScoresBySeason[0].Season != "season-mn-1" || p.MythicPlusScoresBySeason[0].Scores.All != 3179.7 {
+		t.Fatalf("scores %+v", p.MythicPlusScoresBySeason)
+	}
+	if p.MythicPlusRanks["overall"].World != 982962 || p.MythicPlusRanks["spec_71"].Realm != 454 {
+		t.Fatalf("ranks %+v", p.MythicPlusRanks)
+	}
+	if p.PreviousMythicPlusRanks["overall"].World != 0 {
+		t.Fatalf("previous ranks %+v", p.PreviousMythicPlusRanks)
+	}
+	run := p.MythicPlusRecentRuns[0]
+	if run.Dungeon != "Nexus-Point Xenas" || run.MythicLevel != 13 || run.Score != 387.2 ||
+		!run.CompletedAt.Equal(time.Date(2026, 6, 19, 0, 57, 50, 0, time.UTC)) ||
+		run.Affixes[0].Name != "Fortified" || run.Spec.Slug != "arms" {
+		t.Fatalf("recent %+v", run)
+	}
+	if p.MythicPlusBestRuns[0].Score != 428.3 || p.MythicPlusHighestLevelRuns[0].MythicLevel != 16 {
+		t.Fatalf("best/highest %+v %+v", p.MythicPlusBestRuns, p.MythicPlusHighestLevelRuns)
+	}
+	if len(p.MythicPlusWeeklyHighestLevelRuns) != 0 || len(p.MythicPlusPreviousWeeklyHighestLevelRuns) != 0 {
+		t.Fatalf("weekly %+v %+v", p.MythicPlusWeeklyHighestLevelRuns, p.MythicPlusPreviousWeeklyHighestLevelRuns)
+	}
+	meta := p.RaidAchievementMeta[0]
+	if meta.Tier != "tier21" || meta.CompletedCount != 3 || meta.MetaAchievement.ID != 11987 ||
+		!meta.CompletedAchievements[0].Timestamp.Equal(time.Date(2026, 6, 2, 3, 36, 0, 0, time.UTC)) {
+		t.Fatalf("meta %+v", meta)
+	}
+	if p.RaidAchievementCurve[0].Raid != "nerubar-palace" ||
+		!p.RaidAchievementCurve[0].AOTC.Equal(time.Date(2024, 10, 5, 2, 25, 0, 0, time.UTC)) {
+		t.Fatalf("curve %+v", p.RaidAchievementCurve)
+	}
+}
+
 func TestGetCharacter_validate(t *testing.T) {
 	c := mustNotHit(t)
 	cases := []struct {

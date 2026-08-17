@@ -82,6 +82,7 @@ type RaidGuild struct {
 // in a guild profile response
 type RaidProgression struct {
 	Summary     string `json:"summary"`
+	ExpansionID int    `json:"expansion_id"`
 	Bosses      int    `json:"total_bosses"`
 	NormalKills int    `json:"normal_bosses_killed"`
 	HeroicKills int    `json:"heroic_bosses_killed"`
