@@ -78,8 +78,8 @@ type RaidGuild struct {
 	Color   string     `json:"color"`
 }
 
-// RaidProgression is a struct that contains the raid progression of a guild
-// in a guild profile response
+// RaidProgression is a struct that contains raid progression for a tier,
+// used in both guild and character profile responses
 type RaidProgression struct {
 	Summary     string `json:"summary"`
 	ExpansionID int    `json:"expansion_id"`
