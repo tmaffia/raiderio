@@ -378,24 +378,36 @@ type HallOfFame struct {
 
 // HallOfFameEntry represents a single entry in the hall of fame
 type HallOfFameEntry struct {
-	BossKills []struct {
-		Boss        string `json:"boss"`
-		BossSummary struct {
-			EncounterId int    `json:"encounterId"`
-			Name        string `json:"name"`
-			Slug        string `json:"slug"`
-			Ordinal     int    `json:"ordinal"`
-			WingId      int    `json:"wingId"`
-			IconUrl     string `json:"iconUrl"`
-		} `json:"bossSummary"`
-		DefeatedBy struct {
-			TotalCount int `json:"totalCount"`
-			Guilds     []struct {
-				Guild      RaidGuild `json:"guild"`
-				DefeatedAt time.Time `json:"defeatedAt"`
-			} `json:"guilds"`
-		} `json:"defeatedBy"`
-	} `json:"bossKills"`
+	BossKills []HallOfFameBossKill `json:"bossKills"`
+}
+
+// HallOfFameBossKill is one boss in a hall-of-fame response
+type HallOfFameBossKill struct {
+	Boss        string                `json:"boss"`
+	BossSummary HallOfFameBossSummary `json:"bossSummary"`
+	DefeatedBy  HallOfFameDefeatedBy  `json:"defeatedBy"`
+}
+
+// HallOfFameBossSummary is the static summary of a hall-of-fame boss
+type HallOfFameBossSummary struct {
+	EncounterId int    `json:"encounterId"`
+	Name        string `json:"name"`
+	Slug        string `json:"slug"`
+	Ordinal     int    `json:"ordinal"`
+	WingId      int    `json:"wingId"`
+	IconUrl     string `json:"iconUrl"`
+}
+
+// HallOfFameDefeatedBy is the set of guilds that killed a hall-of-fame boss
+type HallOfFameDefeatedBy struct {
+	TotalCount int               `json:"totalCount"`
+	Guilds     []HallOfFameGuild `json:"guilds"`
+}
+
+// HallOfFameGuild is a guild that killed a hall-of-fame boss
+type HallOfFameGuild struct {
+	Guild      RaidGuild `json:"guild"`
+	DefeatedAt time.Time `json:"defeatedAt"`
 }
 
 // RaidProgressionResponse represents the response from a raid progression request
@@ -405,12 +417,15 @@ type RaidProgressionResponse struct {
 
 // RaidProgressionEntry represents a single progression entry
 type RaidProgressionEntry struct {
-	Progress    int `json:"progress"`
-	TotalGuilds int `json:"totalGuilds"`
-	Guilds      []struct {
-		DefeatedAt time.Time `json:"defeatedAt"`
-		Guild      RaidGuild `json:"guild"`
-	} `json:"guilds"`
+	Progress    int                    `json:"progress"`
+	TotalGuilds int                    `json:"totalGuilds"`
+	Guilds      []RaidProgressionGuild `json:"guilds"`
+}
+
+// RaidProgressionGuild is a guild in a raid-progression entry
+type RaidProgressionGuild struct {
+	DefeatedAt time.Time `json:"defeatedAt"`
+	Guild      RaidGuild `json:"guild"`
 }
 
 func validateBossRankingsQuery(q *BossRankingsQuery) error {
