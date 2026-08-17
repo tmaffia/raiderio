@@ -13,7 +13,7 @@ func TestGetJSON(t *testing.T) {
 		if r.URL.Path != "/characters/profile" || r.URL.Query().Get("name") != "x" {
 			t.Errorf("got %s?%s", r.URL.Path, r.URL.RawQuery)
 		}
-		_, _ = w.Write([]byte(`{"name":"X"}`))
+		w.Write([]byte(`{"name":"X"}`))
 	}))
 	defer ts.Close()
 

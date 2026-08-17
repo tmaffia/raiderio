@@ -34,7 +34,7 @@ func (c *Client) getAPIResponse(ctx context.Context, path string, params url.Val
 	if err != nil {
 		return nil, wrapHttpError(err)
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

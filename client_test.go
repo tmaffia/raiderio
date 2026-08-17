@@ -34,7 +34,7 @@ func setup() {
 		func() {
 			file, err := os.Open(filename)
 			if err == nil {
-				defer func() { _ = file.Close() }()
+				defer file.Close()
 				scanner := bufio.NewScanner(file)
 				for scanner.Scan() {
 					line := scanner.Text()
@@ -42,7 +42,7 @@ func setup() {
 					if len(parts) == 2 {
 						key := strings.TrimSpace(parts[0])
 						value := strings.TrimSpace(parts[1])
-						_ = os.Setenv(key, value)
+						os.Setenv(key, value)
 					}
 				}
 			}
@@ -78,7 +78,7 @@ func TestClient_WithAccessKey(t *testing.T) {
 			t.Errorf("access_key expected: test_key, got: %v", keys[0])
 		}
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"name": "Test Character"}`))
+		w.Write([]byte(`{"name": "Test Character"}`))
 	}))
 	defer ts.Close()
 
@@ -103,7 +103,7 @@ func TestClient_NoAccessKey(t *testing.T) {
 			t.Errorf("access_key query param should NOT be present, got: %v", keys[0])
 		}
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"name": "Test Character"}`))
+		w.Write([]byte(`{"name": "Test Character"}`))
 	}))
 	defer ts.Close()
 
