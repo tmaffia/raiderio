@@ -1,5 +1,7 @@
 package raiderio
 
+import "time"
+
 // CharacterQuery is a struct that represents the query parameters
 // sent for a character profile request
 type CharacterQuery struct {
@@ -27,7 +29,7 @@ type Character struct {
 	ThumbnailUrl      string        `json:"thumbnail_url"`
 	Region            string        `json:"region"`
 	Realm             string        `json:"realm"`
-	LastCrawledAt     string        `json:"last_crawled_at"`
+	LastCrawledAt     time.Time     `json:"last_crawled_at"`
 	ProfileUrl        string        `json:"profile_url"`
 	ProfileBanner     string        `json:"profile_banner"`
 	TalentLoadout     TalentLoadout `json:"talentLoadout"`
@@ -37,10 +39,10 @@ type Character struct {
 // Gear is a struct that represents the gear of a character
 // in a character profile response
 type Gear struct {
-	UpdatedAt         string `json:"updated_at"`
-	ItemLevelEquipped int    `json:"item_level_equipped"`
-	ItemLevelTotal    int    `json:"item_level_total"`
-	Items             Items  `json:"items"`
+	UpdatedAt         time.Time `json:"updated_at"`
+	ItemLevelEquipped int       `json:"item_level_equipped"`
+	ItemLevelTotal    int       `json:"item_level_total"`
+	Items             Items     `json:"items"`
 }
 
 // Items is a struct that represents the items of a character

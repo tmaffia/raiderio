@@ -1,5 +1,7 @@
 package raiderio
 
+import "time"
+
 // GuildQuery is a struct that represents the query parameters
 // sent for a guild profile request
 // Supports optional request fields: members, raid_progression, raid_rankings
@@ -20,7 +22,7 @@ type Guild struct {
 	Faction         string                      `json:"faction"`
 	Region          string                      `json:"region"`
 	Realm           string                      `json:"realm"`
-	LastCrawledAt   string                      `json:"last_crawled_at"`
+	LastCrawledAt   time.Time                   `json:"last_crawled_at"`
 	ProfileUrl      string                      `json:"profile_url"`
 	Members         []Member                    `json:"members"`
 	RaidProgression map[string]RaidProgression  `json:"raid_progression"`

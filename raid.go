@@ -32,17 +32,17 @@ type RaidRanking struct {
 	RegionalRank       int       `json:"region_rank"`
 	Guild              RaidGuild `json:"guild"`
 	EncountersDefeated []struct {
-		Slug           string `json:"slug"`
-		LastDefeatedAt string `json:"lastDefeated"`
-		FirstDefeated  string `json:"firstDefeated"`
+		Slug           string    `json:"slug"`
+		LastDefeatedAt time.Time `json:"lastDefeated"`
+		FirstDefeated  time.Time `json:"firstDefeated"`
 	} `json:"encountersDefeated"`
 	EncountersPulled []struct {
-		Id             int     `json:"id"`
-		Slug           string  `json:"slug"`
-		Pulls          int     `json:"numPulls"`
-		PullsStartedAt string  `json:"pullStartedAt"`
-		BestPercent    float32 `json:"bestPercent"`
-		IsDefeated     bool    `json:"isDefeated"`
+		Id             int       `json:"id"`
+		Slug           string    `json:"slug"`
+		Pulls          int       `json:"numPulls"`
+		PullsStartedAt time.Time `json:"pullStartedAt"`
+		BestPercent    float32   `json:"bestPercent"`
+		IsDefeated     bool      `json:"isDefeated"`
 	} `json:"encountersPulled"`
 }
 
@@ -126,18 +126,18 @@ type Raid struct {
 	ShortName string `json:"short_name"`
 	Icon      string `json:"icon"`
 	Starts    struct {
-		Us string `json:"us"`
-		Eu string `json:"eu"`
-		Tw string `json:"tw"`
-		Kr string `json:"kr"`
-		Cn string `json:"cn"`
+		Us time.Time `json:"us"`
+		Eu time.Time `json:"eu"`
+		Tw time.Time `json:"tw"`
+		Kr time.Time `json:"kr"`
+		Cn time.Time `json:"cn"`
 	} `json:"starts"`
 	Ends struct {
-		Us string `json:"us"`
-		Eu string `json:"eu"`
-		Tw string `json:"tw"`
-		Kr string `json:"kr"`
-		Cn string `json:"cn"`
+		Us time.Time `json:"us"`
+		Eu time.Time `json:"eu"`
+		Tw time.Time `json:"tw"`
+		Kr time.Time `json:"kr"`
+		Cn time.Time `json:"cn"`
 	} `json:"ends"`
 
 	Encounters []Encounter `json:"encounters"`
@@ -359,9 +359,9 @@ type BossRanking struct {
 	RegionRank         int       `json:"regionRank"`
 	Guild              RaidGuild `json:"guild"`
 	EncountersDefeated []struct {
-		Slug          string `json:"slug"`
-		LastDefeated  string `json:"lastDefeated"`
-		FirstDefeated string `json:"firstDefeated"`
+		Slug          string    `json:"slug"`
+		LastDefeated  time.Time `json:"lastDefeated"`
+		FirstDefeated time.Time `json:"firstDefeated"`
 	} `json:"encountersDefeated"`
 }
 
@@ -386,7 +386,7 @@ type HallOfFameEntry struct {
 			TotalCount int `json:"totalCount"`
 			Guilds     []struct {
 				Guild      RaidGuild `json:"guild"`
-				DefeatedAt string    `json:"defeatedAt"`
+				DefeatedAt time.Time `json:"defeatedAt"`
 			} `json:"guilds"`
 		} `json:"defeatedBy"`
 	} `json:"bossKills"`
@@ -402,7 +402,7 @@ type RaidProgressionEntry struct {
 	Progress    int `json:"progress"`
 	TotalGuilds int `json:"totalGuilds"`
 	Guilds      []struct {
-		DefeatedAt string    `json:"defeatedAt"`
+		DefeatedAt time.Time `json:"defeatedAt"`
 		Guild      RaidGuild `json:"guild"`
 	} `json:"guilds"`
 }
