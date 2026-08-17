@@ -43,9 +43,7 @@ func (c *Client) getAPIResponse(ctx context.Context, path string, params url.Val
 
 	if resp.StatusCode != 200 {
 		var responseBody apiErrorResponse
-		if err = json.Unmarshal(body, &responseBody); err != nil {
-			return nil, wrapApiError(&responseBody)
-		}
+		_ = json.Unmarshal(body, &responseBody)
 		return nil, wrapApiError(&responseBody)
 	}
 

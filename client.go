@@ -6,8 +6,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-
-	"github.com/tmaffia/raiderio/expansions"
 )
 
 // Base URL for the Raider.IO API
@@ -20,27 +18,16 @@ type Client struct {
 	HttpClient *http.Client
 }
 
-// ClientOption is a function that configures a Client
-type ClientOption func(*Client)
-
-// WithAccessKey returns a ClientOption that sets the AccessKey
-func WithAccessKey(key string) ClientOption {
-	return func(c *Client) {
-		c.AccessKey = key
+// NewClient creates a Client. Pass an access key for authenticated requests.
+func NewClient(accessKey ...string) *Client {
+	c := &Client{
+		ApiUrl:     baseUrl + "/v1",
+		HttpClient: &http.Client{},
 	}
-}
-
-// NewClient creates a new Client struct
-func NewClient(opts ...ClientOption) *Client {
-	var c Client
-	c.ApiUrl = baseUrl + "/v1"
-	c.HttpClient = &http.Client{}
-
-	for _, opt := range opts {
-		opt(&c)
+	if len(accessKey) > 0 {
+		c.AccessKey = accessKey[0]
 	}
-
-	return &c
+	return c
 }
 
 // GetCharacter retrieves a character profile from the Raider.IO API
@@ -52,7 +39,7 @@ func (c *Client) GetCharacter(ctx context.Context, cq *CharacterQuery) (*Charact
 	}
 
 	params := url.Values{
-		"region": {cq.Region.Slug},
+		"region": {string(cq.Region)},
 		"realm":  {cq.Realm},
 		"name":   {cq.Name},
 	}
@@ -72,7 +59,7 @@ func (c *Client) GetGuild(ctx context.Context, gq *GuildQuery) (*Guild, error) {
 	}
 
 	params := url.Values{
-		"region": {gq.Region.Slug},
+		"region": {string(gq.Region)},
 		"realm":  {gq.Realm},
 		"name":   {gq.Name},
 	}
@@ -80,22 +67,14 @@ func (c *Client) GetGuild(ctx context.Context, gq *GuildQuery) (*Guild, error) {
 		params.Set("fields", strings.Join(gq.fields, ","))
 	}
 
-	profile, err := getJSON[Guild](c, ctx, "/guilds/profile", params)
-	if err != nil {
-		return nil, err
-	}
-	for k, entry := range profile.RaidRankings {
-		entry.RaidSlug = k
-		profile.RaidRankings[k] = entry
-	}
-	return profile, nil
+	return getJSON[Guild](c, ctx, "/guilds/profile", params)
 }
 
 // GetRaids retrieves a list of raids from the Raider.IO API
 // It returns an error if the API returns a non-200 status code, or if the
 // response body cannot be read or mapped to the Raids struct
 // Takes an Expansion enum as a parameter, in addition to context.Context
-func (c *Client) GetRaids(ctx context.Context, e expansions.Expansion) (*Raids, error) {
+func (c *Client) GetRaids(ctx context.Context, e Expansion) (*Raids, error) {
 	params := url.Values{"expansion_id": {strconv.Itoa(int(e))}}
 	return getJSON[Raids](c, ctx, "/raiding/static-data", params)
 }
@@ -112,7 +91,7 @@ func (c *Client) GetRaidRankings(ctx context.Context, rq *RaidQuery) (*RaidRanki
 	params := url.Values{
 		"raid":       {rq.Slug},
 		"difficulty": {string(rq.Difficulty)},
-		"region":     {rq.Region.Slug},
+		"region":     {string(rq.Region)},
 	}
 	if rq.Realm != "" {
 		params.Set("realm", rq.Realm)
@@ -139,7 +118,7 @@ func (c *Client) GetGuildBossKill(ctx context.Context, q *GuildBossKillQuery) (*
 	params := url.Values{
 		"raid":       {q.RaidSlug},
 		"difficulty": {string(q.Difficulty)},
-		"region":     {q.Region.Slug},
+		"region":     {string(q.Region)},
 		"realm":      {q.Realm},
 		"guild":      {q.GuildName},
 		"boss":       {q.BossSlug},
@@ -162,7 +141,7 @@ func (c *Client) GetBossRankings(ctx context.Context, q *BossRankingsQuery) (*Bo
 		"raid":       {q.RaidSlug},
 		"boss":       {q.BossSlug},
 		"difficulty": {string(q.Difficulty)},
-		"region":     {q.Region.Slug},
+		"region":     {string(q.Region)},
 	}
 	if q.Realm != "" {
 		params.Set("realm", q.Realm)
@@ -172,30 +151,30 @@ func (c *Client) GetBossRankings(ctx context.Context, q *BossRankingsQuery) (*Bo
 }
 
 // GetHallOfFame retrieves the hall of fame for a given raid
-func (c *Client) GetHallOfFame(ctx context.Context, q *HallOfFameQuery) (*HallOfFame, error) {
-	if err := validateHallOfFameQuery(q); err != nil {
+func (c *Client) GetHallOfFame(ctx context.Context, q *RaidQuery) (*HallOfFame, error) {
+	if err := validateRaidQuery(q); err != nil {
 		return nil, err
 	}
 
 	params := url.Values{
-		"raid":       {q.RaidSlug},
+		"raid":       {q.Slug},
 		"difficulty": {string(q.Difficulty)},
-		"region":     {q.Region.Slug},
+		"region":     {string(q.Region)},
 	}
 
 	return getJSON[HallOfFame](c, ctx, "/raiding/hall-of-fame", params)
 }
 
 // GetRaidProgression retrieves the raid progression for a given raid
-func (c *Client) GetRaidProgression(ctx context.Context, q *RaidProgressionQuery) (*RaidProgressionResponse, error) {
-	if err := validateRaidProgressionQuery(q); err != nil {
+func (c *Client) GetRaidProgression(ctx context.Context, q *RaidQuery) (*RaidProgressionResponse, error) {
+	if err := validateRaidQuery(q); err != nil {
 		return nil, err
 	}
 
 	params := url.Values{
-		"raid":       {q.RaidSlug},
+		"raid":       {q.Slug},
 		"difficulty": {string(q.Difficulty)},
-		"region":     {q.Region.Slug},
+		"region":     {string(q.Region)},
 	}
 
 	return getJSON[RaidProgressionResponse](c, ctx, "/raiding/progression", params)

@@ -3,7 +3,7 @@ package raiderio_test
 import (
 	"testing"
 
-	"github.com/tmaffia/raiderio/expansions"
+	"github.com/tmaffia/raiderio"
 )
 
 func TestGetRaidBySlug(t *testing.T) {
@@ -19,7 +19,7 @@ func TestGetRaidBySlug(t *testing.T) {
 
 	ctx, cancel := ctx()
 	defer cancel()
-	raids, err := c.GetRaids(ctx, expansions.WAR_WITHIN)
+	raids, err := c.GetRaids(ctx, raiderio.WAR_WITHIN)
 	if err != nil {
 		t.Fatalf("Error getting raids: %v", err)
 	}
