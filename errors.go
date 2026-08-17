@@ -3,6 +3,7 @@ package raiderio
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -26,70 +27,56 @@ var (
 	ErrInvalidRunID      = errors.New("invalid mythic plus run id")
 	ErrRunNotFound       = errors.New("mythic plus run not found")
 	ErrApiTimeout        = errors.New("raiderio api request timeout")
-	// ErrUnexpected is wrapped with the response status and body
-	// (fmt.Errorf("%w: %d %s", ...)) when returned from getAPIResponse,
-	// so callers can errors.Is against it and still inspect err.Error()
-	// for what the API actually returned.
+	ErrRequestCanceled   = errors.New("raiderio api request canceled")
+	// ErrUnexpected wraps an unclassified API or transport failure. It carries
+	// the underlying cause via %w (when one exists) so callers can errors.Is
+	// against it and still inspect the wrapped error for the real reason.
 	ErrUnexpected = errors.New("unexpected error")
 )
 
-// Turns api errors into standardized go errors with
-// consistent error messages
-func wrapApiError(responseBody *apiErrorResponse) error {
-	if strings.Contains(responseBody.Message, "Failed to find region") {
-		return ErrInvalidRegion
-	}
+// mapApiError maps an API error body to a standardized sentinel error.
+// Matching is done case-insensitively against the message because the API's
+// messages are human-readable prose rather than a stable machine contract.
+func mapApiError(responseBody *apiErrorResponse) error {
+	msg := strings.ToLower(responseBody.Message)
 
-	if strings.Contains(responseBody.Message, `"region" must be one of`) {
+	switch {
+	case strings.Contains(msg, "failed to find region"),
+		strings.Contains(msg, `"region" must be one of`):
 		return ErrInvalidRegion
-	}
-
-	if strings.Contains(responseBody.Message, "Failed to find realm") {
+	case strings.Contains(msg, "failed to find realm"):
 		return ErrInvalidRealm
-	}
-
-	if strings.Contains(responseBody.Message, "Failed to find raid") {
+	case strings.Contains(msg, "failed to find raid"),
+		strings.Contains(msg, "could not find requested raid"):
 		return ErrInvalidRaid
-	}
-
-	if strings.Contains(responseBody.Message, "Failed to find boss") {
+	case strings.Contains(msg, "failed to find boss"):
 		return ErrInvalidBoss
-	}
-
-	if strings.Contains(responseBody.Message, "Could not find requested character") {
+	case strings.Contains(msg, "could not find requested character"):
 		return ErrCharacterNotFound
-	}
-
-	if strings.Contains(responseBody.Message, "Could not find requested guild") {
+	case strings.Contains(msg, "could not find requested guild"):
 		return ErrGuildNotFound
-	}
-
-	if strings.Contains(responseBody.Message, "Requested unsupported expansion_id") {
+	case strings.Contains(msg, "requested unsupported expansion_id"):
 		return ErrUnsupportedExpac
-	}
-
-	if strings.Contains(responseBody.Message, "Could not find requested raid") {
-		return ErrInvalidRaid
-	}
-
-	if strings.Contains(responseBody.Message, "Invalid request query input") {
+	case strings.Contains(msg, "invalid request query input"):
 		return ErrInvalidQuery
-	}
-
-	if strings.Contains(responseBody.Message, "Could not find data for season") {
+	case strings.Contains(msg, "could not find data for season"):
 		return ErrInvalidSeason
-	}
-
-	if strings.Contains(responseBody.Message, "could not find keystone run") {
+	case strings.Contains(msg, "could not find keystone run"):
 		return ErrRunNotFound
+	default:
+		return ErrUnexpected
 	}
-
-	return ErrUnexpected
 }
 
+// wrapHttpError maps a transport error to a sentinel while preserving the
+// original cause so callers can still inspect it via errors.Is/As.
 func wrapHttpError(err error) error {
-	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
-		return ErrApiTimeout
+	switch {
+	case errors.Is(err, context.DeadlineExceeded):
+		return fmt.Errorf("%w: %w", ErrApiTimeout, err)
+	case errors.Is(err, context.Canceled):
+		return fmt.Errorf("%w: %w", ErrRequestCanceled, err)
+	default:
+		return fmt.Errorf("%w: %w", ErrUnexpected, err)
 	}
-	return ErrUnexpected
 }

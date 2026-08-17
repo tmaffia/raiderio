@@ -2,6 +2,8 @@ package raiderio
 
 import (
 	"encoding/json"
+	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -122,8 +124,9 @@ type RunRosterMember struct {
 }
 
 // RunCharacter is the character shape embedded in a run roster.
-// ponytail: skips stream/recruitment/talent-tree fields present on the wire;
-// add them if a consumer needs more than identity, class, spec, and location
+// Note: stream/recruitment/talent-tree fields present on the wire are
+// intentionally omitted; add them if a consumer needs more than identity,
+// class, spec, and location.
 type RunCharacter struct {
 	ID      int            `json:"id"`
 	Name    string         `json:"name"`
@@ -171,8 +174,8 @@ type SeasonCutoffsQuery struct {
 }
 
 // SeasonCutoffs is the response from a season cutoffs request.
-// ponytail: drops the season-specific keystoneMyth/allTimedNN/graphData keys
-// present on the wire; add typed fields if a consumer needs them
+// Note: the season-specific keystoneMyth/allTimedNN/graphData keys present on
+// the wire are intentionally dropped; add typed fields if a consumer needs them.
 type SeasonCutoffs struct {
 	Cutoffs SeasonCutoffData `json:"cutoffs"`
 }
@@ -244,8 +247,8 @@ type LeaderboardCapacityRealm struct {
 }
 
 // LeaderboardCapacityDungeon pairs a dungeon with its lowest qualifying run.
-// ponytail: "lowest" is undocumented and always null in observed responses;
-// kept as raw JSON, add a typed field once a non-null sample is available
+// Note: "lowest" is undocumented and always null in observed responses; it is
+// kept as raw JSON until a non-null sample is available for a typed field.
 type LeaderboardCapacityDungeon struct {
 	Dungeon RunDungeon      `json:"dungeon"`
 	Lowest  json.RawMessage `json:"lowest"`
@@ -271,7 +274,7 @@ type PeriodWindow struct {
 	End    time.Time `json:"end"`
 }
 
-func validateAffixesQuery(q *AffixesQuery) error {
+func (q *AffixesQuery) validate() error {
 	if q == nil {
 		return ErrInvalidQuery
 	}
@@ -281,7 +284,43 @@ func validateAffixesQuery(q *AffixesQuery) error {
 	return nil
 }
 
-func validateRunDetailsQuery(q *RunDetailsQuery) error {
+func (q *AffixesQuery) params() url.Values {
+	params := url.Values{"region": {string(q.Region)}}
+	if q.Locale != "" {
+		params.Set("locale", q.Locale)
+	}
+	return params
+}
+
+// validate only rejects a nil query; every field is optional.
+func (q *MythicPlusRunsQuery) validate() error {
+	if q == nil {
+		return ErrInvalidQuery
+	}
+	return nil
+}
+
+func (q *MythicPlusRunsQuery) params() url.Values {
+	params := url.Values{}
+	if q.Region != "" {
+		params.Set("region", string(q.Region))
+	}
+	if q.Season != "" {
+		params.Set("season", q.Season)
+	}
+	if q.Dungeon != "" {
+		params.Set("dungeon", q.Dungeon)
+	}
+	if q.Affixes != "" {
+		params.Set("affixes", q.Affixes)
+	}
+	if q.Page != 0 {
+		params.Set("page", strconv.Itoa(q.Page))
+	}
+	return params
+}
+
+func (q *RunDetailsQuery) validate() error {
 	if q == nil {
 		return ErrInvalidQuery
 	}
@@ -294,7 +333,30 @@ func validateRunDetailsQuery(q *RunDetailsQuery) error {
 	return nil
 }
 
-func validateSeasonCutoffsQuery(q *SeasonCutoffsQuery) error {
+func (q *RunDetailsQuery) params() url.Values {
+	return url.Values{
+		"season": {q.Season},
+		"id":     {strconv.Itoa(q.ID)},
+	}
+}
+
+// validate only rejects a nil query; season is optional.
+func (q *ScoreTiersQuery) validate() error {
+	if q == nil {
+		return ErrInvalidQuery
+	}
+	return nil
+}
+
+func (q *ScoreTiersQuery) params() url.Values {
+	params := url.Values{}
+	if q.Season != "" {
+		params.Set("season", q.Season)
+	}
+	return params
+}
+
+func (q *SeasonCutoffsQuery) validate() error {
 	if q == nil {
 		return ErrInvalidQuery
 	}
@@ -307,7 +369,14 @@ func validateSeasonCutoffsQuery(q *SeasonCutoffsQuery) error {
 	return nil
 }
 
-func validateLeaderboardCapacityQuery(q *LeaderboardCapacityQuery) error {
+func (q *SeasonCutoffsQuery) params() url.Values {
+	return url.Values{
+		"season": {q.Season},
+		"region": {string(q.Region)},
+	}
+}
+
+func (q *LeaderboardCapacityQuery) validate() error {
 	if q == nil {
 		return ErrInvalidQuery
 	}
@@ -315,4 +384,15 @@ func validateLeaderboardCapacityQuery(q *LeaderboardCapacityQuery) error {
 		return ErrInvalidRegion
 	}
 	return nil
+}
+
+func (q *LeaderboardCapacityQuery) params() url.Values {
+	params := url.Values{"region": {string(q.Region)}}
+	if q.Realm != "" {
+		params.Set("realm", q.Realm)
+	}
+	if q.Scope != "" {
+		params.Set("scope", q.Scope)
+	}
+	return params
 }

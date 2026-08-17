@@ -16,6 +16,13 @@ type apiErrorResponse struct {
 	Message    string `json:"message"`
 }
 
+// query is implemented by every endpoint query type. It centralizes validation
+// and URL-parameter construction so client methods stay thin and consistent.
+type query interface {
+	validate() error
+	params() url.Values
+}
+
 func (c *Client) getAPIResponse(ctx context.Context, path string, params url.Values) ([]byte, error) {
 	if c.AccessKey != "" {
 		params.Set("access_key", c.AccessKey)
@@ -28,7 +35,7 @@ func (c *Client) getAPIResponse(ctx context.Context, path string, params url.Val
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqUrl, nil)
 	if err != nil {
-		return nil, errors.New("error creating HTTP request")
+		return nil, fmt.Errorf("error creating HTTP request: %w", err)
 	}
 
 	resp, err := c.HttpClient.Do(req)
@@ -39,20 +46,37 @@ func (c *Client) getAPIResponse(ctx context.Context, path string, params url.Val
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, errors.New("error reading response body")
+		return nil, fmt.Errorf("error reading response body: %w", err)
 	}
 
-	if resp.StatusCode != 200 {
-		var responseBody apiErrorResponse
-		_ = json.Unmarshal(body, &responseBody)
-		err := wrapApiError(&responseBody)
-		if errors.Is(err, ErrUnexpected) {
-			return nil, fmt.Errorf("%w: %d %s", ErrUnexpected, resp.StatusCode, body)
-		}
-		return nil, err
+	if resp.StatusCode != http.StatusOK {
+		return nil, wrapApiError(resp.StatusCode, body)
 	}
 
 	return body, nil
+}
+
+// wrapApiError turns a non-200 response into a sentinel error wrapped with the
+// API's message (or the raw body when no message is present). Unknown errors
+// also carry the HTTP status code.
+func wrapApiError(statusCode int, body []byte) error {
+	var responseBody apiErrorResponse
+	_ = json.Unmarshal(body, &responseBody)
+
+	sentinel := mapApiError(&responseBody)
+	if errors.Is(sentinel, ErrUnexpected) {
+		return fmt.Errorf("%w: %d %s", sentinel, statusCode, apiMessage(&responseBody, body))
+	}
+	return fmt.Errorf("%w: %s", sentinel, apiMessage(&responseBody, body))
+}
+
+// apiMessage returns the API's human-readable message, falling back to the raw
+// body when the message field is absent or empty.
+func apiMessage(responseBody *apiErrorResponse, body []byte) string {
+	if responseBody.Message != "" {
+		return responseBody.Message
+	}
+	return string(body)
 }
 
 func getJSON[T any](c *Client, ctx context.Context, path string, params url.Values) (*T, error) {
@@ -62,7 +86,15 @@ func getJSON[T any](c *Client, ctx context.Context, path string, params url.Valu
 	}
 	var v T
 	if err := json.Unmarshal(body, &v); err != nil {
-		return nil, errors.New("error unmarshalling response")
+		return nil, fmt.Errorf("error unmarshalling response: %w", err)
 	}
 	return &v, nil
+}
+
+// getJSONFor validates a query and fetches its JSON response in one step.
+func getJSONFor[T any](c *Client, ctx context.Context, path string, q query) (*T, error) {
+	if err := q.validate(); err != nil {
+		return nil, err
+	}
+	return getJSON[T](c, ctx, path, q.params())
 }

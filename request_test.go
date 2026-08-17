@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 )
@@ -23,6 +24,32 @@ func TestGetJSON(t *testing.T) {
 	}
 }
 
+func TestGetJSONFor(t *testing.T) {
+	var path, region string
+	c := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+		path = r.URL.Path
+		region = r.URL.Query().Get("region")
+		w.Write([]byte(`{"name":"X"}`))
+	})
+
+	got, err := getJSONFor[Character](c, context.Background(), "/characters/profile", &CharacterQuery{
+		Region: US, Realm: "illidan", Name: "x",
+	})
+	if err != nil || got.Name != "X" {
+		t.Fatalf("got %+v err %v", got, err)
+	}
+	if path != "/characters/profile" || region != "us" {
+		t.Fatalf("path %s region %q", path, region)
+	}
+}
+
+func TestGetJSONFor_nilQuery(t *testing.T) {
+	c := mustNotHit(t)
+	if _, err := getJSONFor[Character](c, context.Background(), "/x", (*CharacterQuery)(nil)); !errors.Is(err, ErrInvalidQuery) {
+		t.Fatal(err)
+	}
+}
+
 func TestGetJSON_apiError(t *testing.T) {
 	c := testClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
@@ -30,6 +57,9 @@ func TestGetJSON_apiError(t *testing.T) {
 	})
 	_, err := getJSON[Character](c, context.Background(), "/x", url.Values{})
 	if !errors.Is(err, ErrCharacterNotFound) {
+		t.Fatal(err)
+	}
+	if err.Error() != "character not found: Could not find requested character" {
 		t.Fatal(err)
 	}
 }
@@ -43,7 +73,7 @@ func TestGetJSON_unexpectedPreservesStatusAndBody(t *testing.T) {
 	if !errors.Is(err, ErrUnexpected) {
 		t.Fatal(err)
 	}
-	if err.Error() != `unexpected error: 500 {"message":"backend exploded"}` {
+	if err.Error() != `unexpected error: 500 backend exploded` {
 		t.Fatal(err)
 	}
 }
@@ -53,7 +83,7 @@ func TestGetJSON_badJSON(t *testing.T) {
 		w.Write([]byte(`{`))
 	})
 	_, err := getJSON[Character](c, context.Background(), "/x", url.Values{})
-	if err == nil || err.Error() != "error unmarshalling response" {
+	if err == nil || !strings.Contains(err.Error(), "error unmarshalling response") {
 		t.Fatal(err)
 	}
 }
@@ -63,7 +93,7 @@ func TestGetJSON_timeout(t *testing.T) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Time{})
 	defer cancel()
 	_, err := getJSON[Character](c, ctx, "/x", url.Values{})
-	if !errors.Is(err, ErrApiTimeout) {
+	if !errors.Is(err, ErrApiTimeout) || !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatal(err)
 	}
 }
@@ -73,7 +103,7 @@ func TestGetJSON_canceled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	_, err := getJSON[Character](c, ctx, "/x", url.Values{})
-	if !errors.Is(err, ErrApiTimeout) {
+	if !errors.Is(err, ErrRequestCanceled) || !errors.Is(err, context.Canceled) {
 		t.Fatal(err)
 	}
 }
