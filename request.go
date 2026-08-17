@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -44,7 +45,11 @@ func (c *Client) getAPIResponse(ctx context.Context, path string, params url.Val
 	if resp.StatusCode != 200 {
 		var responseBody apiErrorResponse
 		_ = json.Unmarshal(body, &responseBody)
-		return nil, wrapApiError(&responseBody)
+		err := wrapApiError(&responseBody)
+		if errors.Is(err, ErrUnexpected) {
+			return nil, fmt.Errorf("%w: %d %s", ErrUnexpected, resp.StatusCode, body)
+		}
+		return nil, err
 	}
 
 	return body, nil

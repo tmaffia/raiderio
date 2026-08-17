@@ -34,6 +34,20 @@ func TestGetJSON_apiError(t *testing.T) {
 	}
 }
 
+func TestGetJSON_unexpectedPreservesStatusAndBody(t *testing.T) {
+	c := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message":"backend exploded"}`))
+	})
+	_, err := getJSON[Character](c, context.Background(), "/x", url.Values{})
+	if !errors.Is(err, ErrUnexpected) {
+		t.Fatal(err)
+	}
+	if err.Error() != `unexpected error: 500 {"message":"backend exploded"}` {
+		t.Fatal(err)
+	}
+}
+
 func TestGetJSON_badJSON(t *testing.T) {
 	c := testClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`{`))
@@ -48,6 +62,16 @@ func TestGetJSON_timeout(t *testing.T) {
 	c := testClient(t, func(http.ResponseWriter, *http.Request) {})
 	ctx, cancel := context.WithDeadline(context.Background(), time.Time{})
 	defer cancel()
+	_, err := getJSON[Character](c, ctx, "/x", url.Values{})
+	if !errors.Is(err, ErrApiTimeout) {
+		t.Fatal(err)
+	}
+}
+
+func TestGetJSON_canceled(t *testing.T) {
+	c := testClient(t, func(http.ResponseWriter, *http.Request) {})
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
 	_, err := getJSON[Character](c, ctx, "/x", url.Values{})
 	if !errors.Is(err, ErrApiTimeout) {
 		t.Fatal(err)

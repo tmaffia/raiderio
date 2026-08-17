@@ -1,6 +1,7 @@
 package raiderio
 
 import (
+	"context"
 	"errors"
 	"strings"
 )
@@ -68,7 +69,7 @@ func wrapApiError(responseBody *apiErrorResponse) error {
 }
 
 func wrapHttpError(err error) error {
-	if strings.Contains(err.Error(), "context deadline exceeded") {
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
 		return ErrApiTimeout
 	}
 	return ErrUnexpected
