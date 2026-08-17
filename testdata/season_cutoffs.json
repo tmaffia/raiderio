@@ -1,0 +1,33 @@
+{
+  "cutoffs": {
+    "updatedAt": "Wed Jan 28 2026 19:41:04 GMT+0000 (Coordinated Universal Time)",
+    "region": { "name": "United States & Oceania", "slug": "us", "short_name": "US" },
+    "p999": {
+      "horde": {
+        "quantile": 0.999,
+        "quantileMinValue": 3731.37,
+        "quantilePopulationCount": 466,
+        "quantilePopulationFraction": 0.001000794622339626,
+        "totalPopulationCount": 465630
+      },
+      "hordeColor": "#ee656b",
+      "alliance": {
+        "quantile": 0.999,
+        "quantileMinValue": 3931.64,
+        "quantilePopulationCount": 483,
+        "quantilePopulationFraction": 0.0010013371894144355,
+        "totalPopulationCount": 482355
+      },
+      "allianceColor": "#f9763b",
+      "all": {
+        "quantile": 0.999,
+        "quantileMinValue": 3912.96,
+        "quantilePopulationCount": 948,
+        "quantilePopulationFraction": 0.0010000158230351747,
+        "totalPopulationCount": 947985
+      },
+      "allColor": "#f87441"
+    },
+    "allTimed20": true
+  }
+}

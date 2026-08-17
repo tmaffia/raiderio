@@ -1,0 +1,71 @@
+{
+  "season": "season-tww-3",
+  "status": "finished",
+  "dungeon": {
+    "type": "dungeon",
+    "id": 16104,
+    "name": "Eco-Dome Al'dani",
+    "short_name": "EDA",
+    "slug": "ecodome-aldani",
+    "expansion_id": 10,
+    "icon_url": "/images/wow/icons/large/inv_112_achievement_dungeon_ecodome.jpg",
+    "patch": "11.2.0",
+    "wowInstanceId": 2830,
+    "map_challenge_mode_id": 542,
+    "keystone_timer_ms": 1860999,
+    "num_bosses": 3,
+    "group_finder_activity_ids": [1694, 1707]
+  },
+  "keystone_run_id": 41876796,
+  "mythic_level": 24,
+  "clear_time_ms": 1544324,
+  "keystone_time_ms": 1860999,
+  "completed_at": "2026-01-21T22:29:13.000Z",
+  "num_chests": 1,
+  "time_remaining_ms": 316675,
+  "faction": "alliance",
+  "score": 551.4,
+  "weekly_modifiers": [
+    {
+      "id": 9,
+      "icon": "achievement_boss_archaedas",
+      "name": "Tyrannical",
+      "slug": "tyrannical",
+      "description": "Bosses have 25% more health. Bosses and their minions inflict up to 15% increased damage."
+    }
+  ],
+  "roster": [
+    {
+      "character": {
+        "id": 246539624,
+        "name": "Silentdk",
+        "class": { "id": 6, "name": "Death Knight", "slug": "death-knight" },
+        "race": { "id": 4, "name": "Night Elf", "slug": "night-elf", "faction": "alliance" },
+        "faction": "alliance",
+        "spec": {
+          "id": 251,
+          "name": "Frost",
+          "slug": "frost",
+          "class_id": 6,
+          "role": "dps",
+          "is_melee": true,
+          "patch": "3.0.0",
+          "ordinal": 1
+        },
+        "realm": {
+          "id": 369,
+          "connectedRealmId": 207,
+          "name": "Illidan",
+          "altName": null,
+          "slug": "illidan",
+          "altSlug": "illidan",
+          "locale": "en_US",
+          "isConnected": false
+        },
+        "region": { "name": "United States & Oceania", "slug": "us", "short_name": "US" }
+      },
+      "role": "dps",
+      "loadout": "CAEAAAAAAAAAAAAAAAAAAAAAAMzwMLz4BmFMzEzMmZmZmZ2MzMzMMDAAAMzglZmZDAAAAAAsAw2yYmZGMbGjZGLAAAMzGwMMGAA"
+    }
+  ]
+}

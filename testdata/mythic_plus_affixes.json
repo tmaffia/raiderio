@@ -1,0 +1,23 @@
+{
+  "region": "us",
+  "title": "Xal'atath's Bargain: Pulsar, Tyrannical, Fortified, Xal'atath's Guile",
+  "leaderboard_url": "https://raider.io/mythic-plus-affix-rankings/season-mn-1/all/us/leaderboards-strict/xalataths-bargain-pulsar-tyrannical-fortified-xalataths-guile",
+  "affix_details": [
+    {
+      "id": 162,
+      "name": "Xal'atath's Bargain: Pulsar",
+      "description": "While in combat, Xal'atath summons pulsars that orbit players.",
+      "icon": "inv_cosmicvoid_nova",
+      "icon_url": "https://cdn.raiderio.net/images/wow/icons/large/inv_cosmicvoid_nova.jpg",
+      "wowhead_url": "https://wowhead.com/affix=162"
+    },
+    {
+      "id": 9,
+      "name": "Tyrannical",
+      "description": "Bosses have 25% more health. Bosses and their minions inflict up to 15% increased damage.",
+      "icon": "achievement_boss_archaedas",
+      "icon_url": "https://cdn.raiderio.net/images/wow/icons/large/achievement_boss_archaedas.jpg",
+      "wowhead_url": "https://wowhead.com/affix=9"
+    }
+  ]
+}

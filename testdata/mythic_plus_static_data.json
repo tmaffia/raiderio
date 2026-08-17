@@ -1,0 +1,38 @@
+{
+  "seasons": [
+    {
+      "slug": "season-tww-3",
+      "name": "TWW Season 3",
+      "blizzard_season_id": 15,
+      "is_main_season": false,
+      "short_name": "TWW3",
+      "seasonal_affix": null,
+      "starts": {
+        "us": "2025-08-12T15:00:00Z",
+        "eu": "2025-08-13T04:00:00Z",
+        "tw": "2025-08-13T23:00:00Z",
+        "kr": "2025-08-13T23:00:00Z",
+        "cn": "2025-08-13T23:00:00Z"
+      },
+      "ends": {
+        "us": "2026-01-20T06:00:00Z",
+        "eu": "2026-01-20T21:00:00Z",
+        "tw": "2026-01-21T14:00:00Z",
+        "kr": "2026-01-21T14:00:00Z",
+        "cn": "2026-01-21T14:00:00Z"
+      },
+      "dungeons": [
+        {
+          "id": 15093,
+          "challenge_mode_id": 503,
+          "slug": "arakara-city-of-echoes",
+          "name": "Ara-Kara, City of Echoes",
+          "short_name": "ARAK",
+          "keystone_timer_seconds": 1800,
+          "icon_url": "https://cdn.raiderio.net/images/wow/icons/large/inv_achievement_dungeon_arak-ara.jpg",
+          "background_image_url": "https://cdn.raiderio.net/images/dungeons/expansion10/base/arakara-city-of-echoes.jpg"
+        }
+      ]
+    }
+  ]
+}

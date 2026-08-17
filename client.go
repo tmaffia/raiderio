@@ -181,3 +181,119 @@ func (c *Client) GetRaidProgression(ctx context.Context, q *RaidQuery) (*RaidPro
 
 	return getJSON[RaidProgressionResponse](c, ctx, "/raiding/progression", params)
 }
+
+// GetMythicPlusAffixes retrieves the current mythic plus affixes for a region
+func (c *Client) GetMythicPlusAffixes(ctx context.Context, q *AffixesQuery) (*MythicPlusAffixes, error) {
+	if err := validateAffixesQuery(q); err != nil {
+		return nil, err
+	}
+
+	params := url.Values{"region": {string(q.Region)}}
+	if q.Locale != "" {
+		params.Set("locale", q.Locale)
+	}
+
+	return getJSON[MythicPlusAffixes](c, ctx, "/mythic-plus/affixes", params)
+}
+
+// GetMythicPlusStaticData retrieves the mythic plus seasons and dungeons for an expansion
+func (c *Client) GetMythicPlusStaticData(ctx context.Context, e Expansion) (*MythicPlusStaticData, error) {
+	params := url.Values{"expansion_id": {strconv.Itoa(int(e))}}
+	return getJSON[MythicPlusStaticData](c, ctx, "/mythic-plus/static-data", params)
+}
+
+// GetMythicPlusRuns retrieves the mythic plus runs leaderboard.
+// All query fields are optional; the API applies its own defaults when omitted
+func (c *Client) GetMythicPlusRuns(ctx context.Context, q *MythicPlusRunsQuery) (*MythicPlusRuns, error) {
+	if q == nil {
+		return nil, ErrInvalidQuery
+	}
+
+	params := url.Values{}
+	if q.Region != "" {
+		params.Set("region", string(q.Region))
+	}
+	if q.Season != "" {
+		params.Set("season", q.Season)
+	}
+	if q.Dungeon != "" {
+		params.Set("dungeon", q.Dungeon)
+	}
+	if q.Affixes != "" {
+		params.Set("affixes", q.Affixes)
+	}
+	if q.Page != 0 {
+		params.Set("page", strconv.Itoa(q.Page))
+	}
+
+	return getJSON[MythicPlusRuns](c, ctx, "/mythic-plus/runs", params)
+}
+
+// GetMythicPlusRunDetails retrieves the details of a single mythic plus run
+func (c *Client) GetMythicPlusRunDetails(ctx context.Context, q *RunDetailsQuery) (*MythicPlusRunEntry, error) {
+	if err := validateRunDetailsQuery(q); err != nil {
+		return nil, err
+	}
+
+	params := url.Values{
+		"season": {q.Season},
+		"id":     {strconv.Itoa(q.ID)},
+	}
+
+	return getJSON[MythicPlusRunEntry](c, ctx, "/mythic-plus/run-details", params)
+}
+
+// GetMythicPlusScoreTiers retrieves the score/color breakpoints for a season.
+// Season is optional; the API defaults to the current season when omitted
+func (c *Client) GetMythicPlusScoreTiers(ctx context.Context, q *ScoreTiersQuery) ([]ScoreTier, error) {
+	if q == nil {
+		return nil, ErrInvalidQuery
+	}
+
+	params := url.Values{}
+	if q.Season != "" {
+		params.Set("season", q.Season)
+	}
+
+	tiers, err := getJSON[[]ScoreTier](c, ctx, "/mythic-plus/score-tiers", params)
+	if err != nil {
+		return nil, err
+	}
+	return *tiers, nil
+}
+
+// GetMythicPlusSeasonCutoffs retrieves the score cutoffs for a season and region
+func (c *Client) GetMythicPlusSeasonCutoffs(ctx context.Context, q *SeasonCutoffsQuery) (*SeasonCutoffs, error) {
+	if err := validateSeasonCutoffsQuery(q); err != nil {
+		return nil, err
+	}
+
+	params := url.Values{
+		"season": {q.Season},
+		"region": {string(q.Region)},
+	}
+
+	return getJSON[SeasonCutoffs](c, ctx, "/mythic-plus/season-cutoffs", params)
+}
+
+// GetMythicPlusLeaderboardCapacity retrieves the per-realm leaderboard capacity for a region
+func (c *Client) GetMythicPlusLeaderboardCapacity(ctx context.Context, q *LeaderboardCapacityQuery) (*LeaderboardCapacity, error) {
+	if err := validateLeaderboardCapacityQuery(q); err != nil {
+		return nil, err
+	}
+
+	params := url.Values{"region": {string(q.Region)}}
+	if q.Realm != "" {
+		params.Set("realm", q.Realm)
+	}
+	if q.Scope != "" {
+		params.Set("scope", q.Scope)
+	}
+
+	return getJSON[LeaderboardCapacity](c, ctx, "/mythic-plus/leaderboard-capacity", params)
+}
+
+// GetPeriods retrieves the current weekly reset periods for each region
+func (c *Client) GetPeriods(ctx context.Context) (*Periods, error) {
+	return getJSON[Periods](c, ctx, "/periods", url.Values{})
+}

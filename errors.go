@@ -22,6 +22,9 @@ var (
 	ErrPageOutOfBounds   = errors.New("page must be a positive int")
 	ErrInvalidBoss       = errors.New("invalid boss")
 	ErrInvalidQuery      = errors.New("invalid query")
+	ErrInvalidSeason     = errors.New("invalid season")
+	ErrInvalidRunID      = errors.New("invalid mythic plus run id")
+	ErrRunNotFound       = errors.New("mythic plus run not found")
 	ErrApiTimeout        = errors.New("raiderio api request timeout")
 	// ErrUnexpected is wrapped with the response status and body
 	// (fmt.Errorf("%w: %d %s", ...)) when returned from getAPIResponse,
@@ -34,6 +37,10 @@ var (
 // consistent error messages
 func wrapApiError(responseBody *apiErrorResponse) error {
 	if strings.Contains(responseBody.Message, "Failed to find region") {
+		return ErrInvalidRegion
+	}
+
+	if strings.Contains(responseBody.Message, `"region" must be one of`) {
 		return ErrInvalidRegion
 	}
 
@@ -67,6 +74,14 @@ func wrapApiError(responseBody *apiErrorResponse) error {
 
 	if strings.Contains(responseBody.Message, "Invalid request query input") {
 		return ErrInvalidQuery
+	}
+
+	if strings.Contains(responseBody.Message, "Could not find data for season") {
+		return ErrInvalidSeason
+	}
+
+	if strings.Contains(responseBody.Message, "could not find keystone run") {
+		return ErrRunNotFound
 	}
 
 	return ErrUnexpected
