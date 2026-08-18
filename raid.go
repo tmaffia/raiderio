@@ -1,22 +1,27 @@
 package raiderio
 
 import (
-	"encoding/json"
 	"net/url"
 	"strconv"
 	"time"
 )
 
-// RaidQuery is the query for raid-scoped endpoints. Slug, Difficulty, and
-// Region are required. Realm, Limit, and Page are only honored by the
-// raid-rankings endpoint and ignored by hall-of-fame and progression.
+// RaidQuery is the query for raid-scoped endpoints: hall-of-fame and
+// progression. Slug, Difficulty, and Region are all required.
 type RaidQuery struct {
 	Slug       string
 	Difficulty RaidDifficulty
 	Region     Region
-	Realm      string
-	Limit      int
-	Page       int
+}
+
+// RaidRankingsQuery is the query for the raid-rankings endpoint. Embeds
+// RaidQuery for the required Slug/Difficulty/Region; Realm, Limit, and Page
+// are additional and only honored by this endpoint.
+type RaidRankingsQuery struct {
+	RaidQuery
+	Realm string
+	Limit int
+	Page  int
 }
 
 // RaidRankings is a struct that represents the response from a
@@ -245,13 +250,7 @@ type GuildBossKillQuery struct {
 
 // The /guilds/boss-kill endpoint returns an enormous JSON structure for each
 // character in the raid roster; this library maps it to a simplified shape.
-func unmarshalGuildBossKill(b []byte) (*BossKill, error) {
-	resp := bossKillResp{}
-	err := json.Unmarshal(b, &resp)
-	if err != nil {
-		return nil, err
-	}
-
+func mapBossKill(resp bossKillResp) BossKill {
 	kd := BossKillData{
 		PulledAt:             resp.Kill.PulledAt,
 		DefeatedAt:           resp.Kill.DefeatedAt,
@@ -261,11 +260,10 @@ func unmarshalGuildBossKill(b []byte) (*BossKill, error) {
 		ItemLevelEquippedMax: resp.Kill.ItemLevelEquippedMax,
 		ItemLevelEquippedMin: resp.Kill.ItemLevelEquippedMin,
 	}
-	k := BossKill{
+	return BossKill{
 		Kill:   kd,
 		Roster: unmarshalBossKillRoster(&resp),
 	}
-	return &k, nil
 }
 
 func unmarshalBossKillRoster(k *bossKillResp) []RosterCharacter {
@@ -336,20 +334,19 @@ func raidDifficultyValid(d RaidDifficulty) bool {
 	return d == NORMAL_RAID || d == HEROIC_RAID || d == MYTHIC_RAID
 }
 
-// validateRankings checks a RaidQuery for the raid-rankings endpoint, which
-// additionally supports limit and page.
-func (q *RaidQuery) validateRankings() error {
-	if err := q.validate(); err != nil {
+func (q *RaidRankingsQuery) validate() error {
+	if q == nil {
+		return ErrInvalidQuery
+	}
+	if err := q.RaidQuery.validate(); err != nil {
 		return err
 	}
 	if q.Limit < 0 {
 		return ErrLimitOutOfBounds
 	}
-
 	if q.Page < 0 {
 		return ErrPageOutOfBounds
 	}
-
 	return nil
 }
 
@@ -502,10 +499,8 @@ func (q *RaidQuery) params() url.Values {
 	}
 }
 
-// rankingParams returns the params for the raid-rankings endpoint, the only
-// raid endpoint that supports realm, limit, and page.
-func (q *RaidQuery) rankingParams() url.Values {
-	params := q.params()
+func (q *RaidRankingsQuery) params() url.Values {
+	params := q.RaidQuery.params()
 	if q.Realm != "" {
 		params.Set("realm", q.Realm)
 	}

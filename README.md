@@ -102,11 +102,13 @@ import (
 func main() {
 	client := raiderio.NewClient()
 
-	rankings, err := client.GetRaidRankings(context.Background(), &raiderio.RaidQuery{
-		Slug:       "nerubar-palace",
-		Difficulty: raiderio.MYTHIC_RAID,
-		Region:     raiderio.US,
-		Limit:      10,
+	rankings, err := client.GetRaidRankings(context.Background(), &raiderio.RaidRankingsQuery{
+		RaidQuery: raiderio.RaidQuery{
+			Slug:       "nerubar-palace",
+			Difficulty: raiderio.MYTHIC_RAID,
+			Region:     raiderio.US,
+		},
+		Limit: 10,
 	})
 	if err != nil {
 		panic(err)
