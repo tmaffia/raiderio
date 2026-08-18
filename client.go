@@ -55,13 +55,9 @@ func (c *Client) GetRaids(ctx context.Context, e Expansion) (*Raids, error) {
 // GetRaidRankings retrieves a list of raid rankings from the Raider.IO API
 // It returns an error if the API returns a non-200 status code, or if the
 // response body cannot be read or mapped to the RaidRankings struct
-// Takes a RaidQuery struct as a parameter, in addition to context.Context
-func (c *Client) GetRaidRankings(ctx context.Context, q *RaidQuery) (*RaidRankings, error) {
-	if err := q.validateRankings(); err != nil {
-		return nil, err
-	}
-
-	return getJSON[RaidRankings](c, ctx, "/raiding/raid-rankings", q.rankingParams())
+// Takes a RaidRankingsQuery struct as a parameter, in addition to context.Context
+func (c *Client) GetRaidRankings(ctx context.Context, q *RaidRankingsQuery) (*RaidRankings, error) {
+	return getJSONFor[RaidRankings](c, ctx, "/raiding/raid-rankings", q)
 }
 
 // GetGuildBossKill returns a guild's first kill of a given boss
@@ -69,15 +65,7 @@ func (c *Client) GetRaidRankings(ctx context.Context, q *RaidQuery) (*RaidRankin
 // GuildBossKillQuery has only required fields for this request
 // returns a BossKill object
 func (c *Client) GetGuildBossKill(ctx context.Context, q *GuildBossKillQuery) (*BossKill, error) {
-	if err := q.validate(); err != nil {
-		return nil, err
-	}
-
-	body, err := c.getAPIResponse(ctx, "/guilds/boss-kill", q.params())
-	if err != nil {
-		return nil, err
-	}
-	return unmarshalGuildBossKill(body)
+	return getJSONForMapped(c, ctx, "/guilds/boss-kill", q, mapBossKill)
 }
 
 // GetBossRankings retrieves the boss rankings for a given raid and boss

@@ -1,6 +1,7 @@
 package raiderio
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -17,11 +18,12 @@ func TestGetRaidBySlug(t *testing.T) {
 	}
 }
 
-func TestUnmarshalGuildBossKill(t *testing.T) {
-	k, err := unmarshalGuildBossKill(testdata(t, "boss_kill.json"))
-	if err != nil {
+func TestMapBossKill(t *testing.T) {
+	var resp bossKillResp
+	if err := json.Unmarshal(testdata(t, "boss_kill.json"), &resp); err != nil {
 		t.Fatal(err)
 	}
+	k := mapBossKill(resp)
 	if !k.Kill.IsSuccess || k.Kill.Duration != 396990*time.Millisecond {
 		t.Fatalf("kill %+v", k.Kill)
 	}
@@ -39,9 +41,5 @@ func TestUnmarshalGuildBossKill(t *testing.T) {
 		c.TalentLoadout.LoadoutText != "B0QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAESkkEtISEAAAAQikkAIJJJJpIpEiQASSSSaJBOAAA" ||
 		c.Gear.ItemLevelEquipped != 401 {
 		t.Fatalf("char %+v", c)
-	}
-
-	if _, err := unmarshalGuildBossKill([]byte(`{`)); err == nil {
-		t.Fatal("expected error")
 	}
 }

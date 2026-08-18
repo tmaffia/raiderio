@@ -93,8 +93,20 @@ func getJSON[T any](c *Client, ctx context.Context, path string, params url.Valu
 
 // getJSONFor validates a query and fetches its JSON response in one step.
 func getJSONFor[T any](c *Client, ctx context.Context, path string, q query) (*T, error) {
+	return getJSONForMapped(c, ctx, path, q, func(v T) T { return v })
+}
+
+// getJSONForMapped validates a query, fetches its JSON response into the wire
+// shape TWire, and maps it to the domain shape TDomain. Use this when the API
+// response doesn't map directly onto the type the client returns.
+func getJSONForMapped[TWire, TDomain any](c *Client, ctx context.Context, path string, q query, mapFn func(TWire) TDomain) (*TDomain, error) {
 	if err := q.validate(); err != nil {
 		return nil, err
 	}
-	return getJSON[T](c, ctx, path, q.params())
+	wire, err := getJSON[TWire](c, ctx, path, q.params())
+	if err != nil {
+		return nil, err
+	}
+	v := mapFn(*wire)
+	return &v, nil
 }

@@ -318,9 +318,9 @@ func TestGetRaidRankings(t *testing.T) {
 		w.Write(testdata(t, "raid_rankings.json"))
 	})
 
-	got, err := c.GetRaidRankings(context.Background(), &RaidQuery{
-		Slug: "nerubar-palace", Difficulty: MYTHIC_RAID, Region: US,
-		Realm: "illidan", Limit: 1, Page: 2,
+	got, err := c.GetRaidRankings(context.Background(), &RaidRankingsQuery{
+		RaidQuery: RaidQuery{Slug: "nerubar-palace", Difficulty: MYTHIC_RAID, Region: US},
+		Realm:     "illidan", Limit: 1, Page: 2,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -349,17 +349,17 @@ func TestGetRaidRankings(t *testing.T) {
 
 func TestGetRaidRankings_validate(t *testing.T) {
 	c := mustNotHit(t)
-	ok := RaidQuery{Slug: "x", Difficulty: MYTHIC_RAID, Region: US}
+	ok := RaidRankingsQuery{RaidQuery: RaidQuery{Slug: "x", Difficulty: MYTHIC_RAID, Region: US}}
 	cases := []struct {
-		q    RaidQuery
+		q    RaidRankingsQuery
 		want error
 	}{
-		{RaidQuery{Difficulty: MYTHIC_RAID, Region: US}, ErrInvalidRaidName},
-		{RaidQuery{Slug: "x", Region: US}, ErrInvalidRaidDiff},
-		{RaidQuery{Slug: "x", Difficulty: "nope", Region: US}, ErrInvalidRaidDiff},
-		{RaidQuery{Slug: "x", Difficulty: MYTHIC_RAID}, ErrInvalidRegion},
-		{func() RaidQuery { q := ok; q.Limit = -1; return q }(), ErrLimitOutOfBounds},
-		{func() RaidQuery { q := ok; q.Page = -1; return q }(), ErrPageOutOfBounds},
+		{RaidRankingsQuery{RaidQuery: RaidQuery{Difficulty: MYTHIC_RAID, Region: US}}, ErrInvalidRaidName},
+		{RaidRankingsQuery{RaidQuery: RaidQuery{Slug: "x", Region: US}}, ErrInvalidRaidDiff},
+		{RaidRankingsQuery{RaidQuery: RaidQuery{Slug: "x", Difficulty: "nope", Region: US}}, ErrInvalidRaidDiff},
+		{RaidRankingsQuery{RaidQuery: RaidQuery{Slug: "x", Difficulty: MYTHIC_RAID}}, ErrInvalidRegion},
+		{func() RaidRankingsQuery { q := ok; q.Limit = -1; return q }(), ErrLimitOutOfBounds},
+		{func() RaidRankingsQuery { q := ok; q.Page = -1; return q }(), ErrPageOutOfBounds},
 	}
 	for _, tc := range cases {
 		_, err := c.GetRaidRankings(context.Background(), &tc.q)
